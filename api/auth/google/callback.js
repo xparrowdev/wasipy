@@ -47,15 +47,32 @@ module.exports = async (req, res) => {
       if (!session) return fail(res, 'Please sign in first, then connect a service.');
       const service = stateObj.service;
       if (!SERVICES[service]) return fail(res, 'Unknown service.');
-      const info = await getUserInfo(tokens);
-      await saveConnection(session.userId, service, tokens, info.email);
+      let info;
+      try {
+        info = await getUserInfo(tokens);
+      } catch (e) {
+        console.error('connect: getUserInfo failed', e);
+        return fail(res, 'Could not read your Google profile. Please try again.');
+      }
+      try {
+        await saveConnection(session.userId, service, tokens, info.email);
+      } catch (e) {
+        console.error('connect: saveConnection failed', e);
+        return fail(res, 'Could not save this connection (database error). Please try again.');
+      }
       await logActivity(session.userId, `Connected ${SERVICES[service].label} (${info.email})`);
       res.writeHead(302, { Location: `${stateObj.returnTo}?connected=${service}` });
       return res.end();
     }
 
     // login
-    const info = await getUserInfo(tokens);
+    let info;
+    try {
+      info = await getUserInfo(tokens);
+    } catch (e) {
+      console.error('login: getUserInfo failed', e);
+      return fail(res, 'Could not read your Google profile. Please try again.');
+    }
     if (!info.id || !info.email) return fail(res, 'Google did not return an account. Please try again.');
     const db = await getDb();
     const user = {
@@ -66,11 +83,16 @@ module.exports = async (req, res) => {
       picture: info.picture || '',
       updatedAt: new Date(),
     };
-    await db.collection('users').updateOne(
-      { _id: user._id },
-      { $set: user, $setOnInsert: { createdAt: new Date() } },
-      { upsert: true }
-    );
+    try {
+      await db.collection('users').updateOne(
+        { _id: user._id },
+        { $set: user, $setOnInsert: { createdAt: new Date() } },
+        { upsert: true }
+      );
+    } catch (e) {
+      console.error('login: user upsert failed', e);
+      return fail(res, 'Could not save your account (database error). Please try again.');
+    }
     createSession(res, user);
     await logActivity(user._id, `Signed in as ${info.email}`);
     res.writeHead(302, { Location: stateObj.returnTo || '/' });

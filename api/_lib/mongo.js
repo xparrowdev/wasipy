@@ -10,7 +10,11 @@ function getClient() {
   if (!clientPromise) {
     const uri = process.env.MONGODB_URI;
     if (!uri) throw new Error('Missing MONGODB_URI');
-    const client = new MongoClient(uri);
+    const client = new MongoClient(uri, {
+      // Fail fast (8s) instead of the driver's 30s default, so a blocked or
+      // wrong database surfaces a clear error instead of a hung request.
+      serverSelectionTimeoutMS: 8000,
+    });
     clientPromise = client.connect();
   }
   return clientPromise;
