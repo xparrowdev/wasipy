@@ -1,7 +1,8 @@
 // /api/chat — the agent conversation (one thread per user, chatId "main").
-// GET  — recent message history
-// POST — { message, timezone } → runs the agent, saves both messages,
-//        returns { reply, pendingAction? }
+// GET    — recent message history
+// POST   — { message, timezone } → runs the agent, saves both messages,
+//          returns { reply, pendingAction? }
+// DELETE — clear this user's chat history (fresh start)
 const { getSession } = require('./_lib/session');
 const { getDb } = require('./_lib/mongo');
 const { runAgent } = require('./_lib/ai');
@@ -42,6 +43,11 @@ module.exports = async (req, res) => {
     return json(res, 200, {
       messages: rows.map((r) => ({ role: r.role, content: r.content })),
     });
+  }
+
+  if (req.method === 'DELETE') {
+    await messages.deleteMany({ userId: String(session.userId), chatId: CHAT_ID });
+    return json(res, 200, { ok: true });
   }
 
   if (req.method !== 'POST') return json(res, 405, { error: 'Method not allowed' });

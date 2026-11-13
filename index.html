@@ -41,6 +41,8 @@ h1,h2,h3{margin:0;font-weight:600}
 .btn-g .g{font-weight:800;font-size:16px;background:conic-gradient(from 0deg,#ea4335 0 25%,#fbbc05 0 50%,#34a853 0 75%,#4285f4 0);-webkit-background-clip:text;background-clip:text;color:transparent}
 .btn-disconnect{background:transparent;color:var(--red);border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-weight:600;font-size:13.5px;cursor:pointer}
 .btn-disconnect:hover{background:var(--hover)}
+.btn-quiet{background:transparent;color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-weight:600;font-size:13.5px;cursor:pointer}
+.btn-quiet:hover{background:var(--hover)}
 
 /* Layout */
 .layout{max-width:1120px;margin:0 auto;padding:28px 20px 40px;display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:36px;align-items:start}
@@ -140,6 +142,7 @@ footer{max-width:1120px;margin:0 auto;padding:6px 20px 30px;color:var(--faint);f
       <span class="status" id="statusPill"><i></i> Not connected</span>
       <button class="btn-g" id="connectBtn" type="button"><span class="g">G</span> Continue with Google</button>
       <button class="btn-disconnect" id="disconnectBtn" type="button" style="display:none">Sign out</button>
+      <button class="btn-quiet" id="newChatBtn" type="button" style="display:none">New chat</button>
     </div>
   </div>
 </header>
@@ -200,6 +203,7 @@ First, tap “Continue with Google” above. Then connect the services you want 
   var chatLog=document.getElementById('chatLog'), typing=document.getElementById('typing'), log=document.getElementById('actionLog');
   var form=document.getElementById('chatForm'), input=document.getElementById('chatInput');
   var connectBtn=document.getElementById('connectBtn'), disconnectBtn=document.getElementById('disconnectBtn');
+  var newChatBtn=document.getElementById('newChatBtn');
   var statusPill=document.getElementById('statusPill'), avatar=document.getElementById('avatar');
   var whoName=document.getElementById('whoName'), whoMail=document.getElementById('whoMail');
   var svcList=document.getElementById('svcList');
@@ -267,11 +271,11 @@ First, tap “Continue with Google” above. Then connect the services you want 
         avatar.textContent=(data.user.name||data.user.email||'?').charAt(0).toUpperCase();
         whoName.textContent=data.user.name||data.user.email;
         whoMail.textContent=data.user.email;
-        connectBtn.style.display='none'; disconnectBtn.style.display='';
+        connectBtn.style.display='none'; disconnectBtn.style.display=''; newChatBtn.style.display='';
       } else {
         statusPill.innerHTML='<i></i> Not connected'; statusPill.classList.remove('on');
         avatar.textContent='?'; whoName.textContent='Not signed in'; whoMail.textContent='Connect Google to start';
-        connectBtn.style.display=''; disconnectBtn.style.display='none';
+        connectBtn.style.display=''; disconnectBtn.style.display='none'; newChatBtn.style.display='none';
       }
     }).catch(function(){});
   }
@@ -340,6 +344,15 @@ First, tap “Continue with Google” above. Then connect the services you want 
 
   disconnectBtn.addEventListener('click',function(){
     fetch('/api/auth/logout',{method:'POST'}).then(function(){ window.location.reload(); });
+  });
+
+  // New chat: clears this chat's history (server + screen) so the agent
+  // starts fresh — old failed turns can't confuse it any more.
+  newChatBtn.addEventListener('click',function(){
+    if(sending) return;
+    fetch('/api/chat',{method:'DELETE'})
+      .then(function(){ chatLog.innerHTML=''; addMsg('Hi, I’m Wasipy. Fresh start — ask me anything about your Calendar, Gmail, Drive, Sheets, or Docs.','agent'); })
+      .catch(function(){ addMsg('Could not clear the chat. Please try again.','agent'); });
   });
 
   form.addEventListener('submit',function(e){ e.preventDefault(); var v=input.value.trim(); if(!v)return; input.value=''; send(v); });
