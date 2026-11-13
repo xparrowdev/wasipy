@@ -5,6 +5,7 @@
 const { getSession } = require('./_lib/session');
 const { getDb } = require('./_lib/mongo');
 const { runAgent } = require('./_lib/ai');
+const { listConnections } = require('./_lib/google');
 
 const CHAT_ID = 'main';
 
@@ -66,11 +67,16 @@ module.exports = async (req, res) => {
     .toArray();
   history.reverse();
 
+  // Tell the agent which services are actually connected, so it never guesses
+  // ("please connect Gmail" when Gmail is already connected).
+  const connections = await listConnections(userId);
+
   const out = await runAgent({
     userId,
     userMessage: text,
     history: history.map((m) => ({ role: m.role, content: m.content })),
     timezone: body.timezone || 'UTC',
+    connectedServices: connections.map((c) => c.service),
   });
 
   await messages.insertOne({

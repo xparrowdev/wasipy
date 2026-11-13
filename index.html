@@ -109,6 +109,23 @@ h1,h2,h3{margin:0;font-weight:600}
 .log-panel li .tick{color:var(--green);font-weight:700;flex:none}
 .log-panel li.working .tick{color:var(--amber)}
 
+/* Connect celebration — only shown right after a service connects */
+.celebrate{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:rgba(0,0,0,.45);backdrop-filter:blur(3px);animation:celIn .25s ease;cursor:pointer}
+.celebrate.out{opacity:0;transition:opacity .35s}
+@keyframes celIn{from{opacity:0}to{opacity:1}}
+.cel-card{background:var(--bg);border-radius:24px;padding:34px 42px 28px;text-align:center;box-shadow:var(--shadow);position:relative;animation:celPop .45s cubic-bezier(.2,1.4,.4,1)}
+@keyframes celPop{from{opacity:0;transform:scale(.85) translateY(10px)}to{opacity:1;transform:none}}
+.cel-check{width:72px;height:72px;margin:0 auto 14px}
+.cel-check circle{fill:none;stroke:var(--green);stroke-width:3;stroke-dasharray:151;stroke-dashoffset:151;animation:celDraw .6s .1s ease forwards}
+.cel-check path{fill:none;stroke:var(--green);stroke-width:4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:36;stroke-dashoffset:36;animation:celDraw .35s .55s ease forwards}
+@keyframes celDraw{to{stroke-dashoffset:0}}
+.cel-card h2{font-size:21px}
+.cel-card p{color:var(--muted);font-size:14.5px;margin:6px 0 0}
+.confetti{position:absolute;top:-16px;border-radius:2px;animation-name:confFall;animation-timing-function:cubic-bezier(.3,.6,.6,1);animation-fill-mode:forwards}
+@keyframes confFall{to{transform:translateY(108vh) rotate(720deg);opacity:0}}
+.svc-row.just-connected{animation:rowGlow 1.6s ease 2;border-radius:12px}
+@keyframes rowGlow{0%,100%{background:transparent}50%{background:rgba(26,127,55,.14)}}
+
 footer{max-width:1120px;margin:0 auto;padding:6px 20px 30px;color:var(--faint);font-size:12.5px;text-align:center}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 @media(max-width:900px){.composer{position:static}}
@@ -330,14 +347,45 @@ First, tap “Continue with Google” above. Then connect the services you want 
     var b=e.target.closest('[data-q]'); if(!b)return; send(b.getAttribute('data-q'));
   });
 
+  // Celebration shown ONLY right after a service connects (?connected=...).
+  function celebrateConnect(service){
+    var s=null;
+    SERVICES.forEach(function(x){ if(x.id===service) s=x; });
+    var label=s?s.label:service;
+    var ov=document.createElement('div'); ov.className='celebrate';
+    var colors=['#4285f4','#ea4335','#fbbc05','#34a853','#7c4dff'];
+    var conf='';
+    for(var i=0;i<28;i++){
+      var left=(Math.random()*100).toFixed(1);
+      var delay=(Math.random()*0.7).toFixed(2);
+      var dur=(1.8+Math.random()*1.4).toFixed(2);
+      var size=(6+Math.random()*6).toFixed(0);
+      conf+='<span class="confetti" style="left:'+left+'%;background:'+colors[i%colors.length]+';width:'+size+'px;height:'+(size*1.6).toFixed(0)+'px;animation-delay:'+delay+'s;animation-duration:'+dur+'s"></span>';
+    }
+    ov.innerHTML=conf+'<div class="cel-card"><svg class="cel-check" viewBox="0 0 52 52"><circle cx="26" cy="26" r="24"/><path d="M14 27l8 8 16-16"/></svg><h2>'+esc(label)+' connected</h2><p>Wasipy can now work in your '+esc(label)+'.</p></div>';
+    document.body.appendChild(ov);
+    var done=false;
+    function close(){ if(done)return; done=true; ov.classList.add('out'); setTimeout(function(){ ov.remove(); },380); }
+    ov.addEventListener('click',close);
+    setTimeout(close,3200);
+    // Pulse the connected row in the rail.
+    var tries=0;
+    (function glow(){
+      var btn=document.querySelector('[data-svc="'+service+'"]');
+      if(btn){ var row=btn.closest('.svc-row'); if(row) row.classList.add('just-connected'); return; }
+      if(++tries<20) setTimeout(glow,150);
+    })();
+  }
+
   // After returning from Google, show what happened.
   var params=new URLSearchParams(window.location.search);
-  if(params.get('connected')){ addLog('Connected '+params.get('connected')); }
+  var justConnected=params.get('connected');
+  if(justConnected){ addLog('Connected '+justConnected); }
   if(params.get('error')){ addMsg(params.get('error'),'agent'); }
   if(params.get('signin')==='required'){ addMsg('Please sign in with Google first.','agent'); }
   if(params.toString()){ window.history.replaceState({},'',window.location.pathname); }
 
-  loadMe().then(function(){ if(signedIn){ loadHistory(); loadActivity(); } });
+  loadMe().then(function(){ if(signedIn){ loadHistory(); loadActivity(); } if(justConnected) celebrateConnect(justConnected); });
 })();
 </script>
 </body>
