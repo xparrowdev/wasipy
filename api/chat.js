@@ -41,7 +41,7 @@ module.exports = async (req, res) => {
       .limit(50)
       .toArray();
     return json(res, 200, {
-      messages: rows.map((r) => ({ role: r.role, content: r.content })),
+      messages: rows.map((r) => ({ role: r.role, content: r.content, display: r.display || null })),
     });
   }
 
@@ -90,8 +90,9 @@ module.exports = async (req, res) => {
     chatId: CHAT_ID,
     role: 'assistant',
     content: out.reply,
+    display: out.display || null,
     createdAt: new Date(),
   });
 
-  return json(res, 200, { reply: out.reply, pendingAction: out.pendingAction || null });
+  return json(res, 200, { reply: out.reply, pendingAction: out.pendingAction || null, display: out.display || null });
 };

@@ -8,7 +8,7 @@ const crypto = require('node:crypto');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const OpenAI = require('openai');
 const { getDb, logActivity } = require('./mongo');
-const { ALL_TOOLS, WRITE_TOOL_NAMES, executeRead, summarizeWrite } = require('./tools');
+const { ALL_TOOLS, WRITE_TOOL_NAMES, executeReadRich, summarizeWrite } = require('./tools');
 
 const GEMINI_MODEL = process.env.AI_MODEL_GEMINI || 'gemini-2.5-flash';
 const OPENAI_MODEL = process.env.AI_MODEL_OPENAI || 'gpt-4o-mini';
@@ -47,6 +47,7 @@ function systemPrompt({ today, timezone, connected }) {
     '8. If a tool returns an ERROR, quote the error message exactly to the user. Never guess the cause, never invent a reason, and never tell the user to connect a service that the connected list shows as connected.',
     '9. Do not use markdown formatting (no **bold**, no # headers) — the chat shows plain text, so markdown looks broken. Use simple plain lines.',
     '10. If the user asks you to try again after an error, ALWAYS call the tool again — never repeat an old error from the conversation history without retrying. Things the user fixes (like enabling an API) only show up if you retry.',
+    '11. When you use a read tool, its results are ALSO shown to the user as rich cards below your reply — so keep your reply text short (one line) and do NOT paste long lists, raw links, or file URLs in your reply. Just say what you found in one line.',
   ].join('\n');
 }
 
@@ -115,11 +116,15 @@ async function runGemini({ userId, userMessage, history, timezone, today, connec
     }));
   const chat = model.startChat({ history: geminiHistory });
 
+  let lastDisplay = null;
   let result = await chat.sendMessage(userMessage);
   for (let turn = 0; turn < MAX_TURNS; turn++) {
     const calls = result.response.functionCalls() || [];
     if (!calls.length) {
-      return { reply: result.response.text() || "I couldn't come up with a reply. Could you rephrase that?" };
+      return {
+        reply: result.response.text() || "I couldn't come up with a reply. Could you rephrase that?",
+        display: lastDisplay,
+      };
     }
     const responses = [];
     for (const call of calls) {
@@ -130,9 +135,10 @@ async function runGemini({ userId, userMessage, history, timezone, today, connec
           pendingAction: pending,
         };
       }
-      const output = await executeRead(userId, call.name, call.args || {});
+      const output = await executeReadRich(userId, call.name, call.args || {});
+      if (output.display) lastDisplay = output.display;
       responses.push({
-        functionResponse: { name: call.name, response: { result: String(output).slice(0, 8000) } },
+        functionResponse: { name: call.name, response: { result: String(output.text).slice(0, 8000) } },
       });
     }
     result = await chat.sendMessage(responses);
@@ -156,6 +162,7 @@ async function runOpenAI({ userId, userMessage, history, timezone, today, connec
     function: { name: t.name, description: t.description, parameters: t.parameters },
   }));
 
+  let lastDisplay = null;
   for (let turn = 0; turn < MAX_TURNS; turn++) {
     const res = await client.chat.completions.create({
       model: OPENAI_MODEL,
@@ -168,7 +175,7 @@ async function runOpenAI({ userId, userMessage, history, timezone, today, connec
     messages.push(msg);
     const calls = msg.tool_calls || [];
     if (!calls.length) {
-      return { reply: msg.content || "I couldn't come up with a reply. Could you rephrase that?" };
+      return { reply: msg.content || "I couldn't come up with a reply. Could you rephrase that?", display: lastDisplay };
     }
     for (const call of calls) {
       const args = JSON.parse(call.function.arguments || '{}');
@@ -179,11 +186,12 @@ async function runOpenAI({ userId, userMessage, history, timezone, today, connec
           pendingAction: pending,
         };
       }
-      const output = await executeRead(userId, call.function.name, args);
+      const output = await executeReadRich(userId, call.function.name, args);
+      if (output.display) lastDisplay = output.display;
       messages.push({
         role: 'tool',
         tool_call_id: call.id,
-        content: String(output).slice(0, 8000),
+        content: String(output.text).slice(0, 8000),
       });
     }
   }

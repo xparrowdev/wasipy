@@ -31,7 +31,7 @@ const READ_TOOLS = [
   },
   {
     name: 'search_drive_files',
-    description: 'Search Drive files by name or words in the name.',
+    description: 'Search Drive files by name or words in the name. To show recent files, search with a single common letter like "e" — results are newest first.',
     parameters: {
       type: 'object',
       properties: { query: { type: 'string', description: 'Words to search for, e.g. "invoice"' } },
@@ -131,9 +131,12 @@ async function requireClient(userId, service) {
   return apiFor(service, auth);
 }
 
+// Read executors return { text, display }: text goes to the AI model,
+// display is an optional structured payload the chat UI renders as rich
+// cards (files, emails, events...) instead of raw links and long lists.
 async function listCalendarEvents(userId, args) {
   const cal = await requireClient(userId, 'calendar');
-  if (!cal) return notConnected('Calendar');
+  if (!cal) return { text: notConnected('Calendar'), display: null };
   const days = Math.min(Math.max(Number(args.days) || 3, 1), 14);
   const now = new Date();
   const end = new Date(now.getTime() + days * 24 * 3600 * 1000);
@@ -146,18 +149,24 @@ async function listCalendarEvents(userId, args) {
     maxResults: 30,
   });
   const items = res.data.items || [];
-  if (!items.length) return 'No events in that period.';
-  return items
-    .map((e) => {
-      const start = e.start.dateTime || e.start.date;
-      return `- ${e.summary || '(no title)'} | ${start}${e.location ? ' | ' + e.location : ''}`;
-    })
-    .join('\n');
+  if (!items.length) return { text: 'No events in that period.', display: null };
+  const displayItems = items.map((e) => ({
+    title: e.summary || '(no title)',
+    start: e.start.dateTime || e.start.date || '',
+    end: e.end.dateTime || e.end.date || '',
+    location: e.location || '',
+  }));
+  return {
+    text: displayItems
+      .map((e) => `- ${e.title} | ${e.start}${e.location ? ' | ' + e.location : ''}`)
+      .join('\n'),
+    display: { kind: 'events', items: displayItems },
+  };
 }
 
 async function listRecentEmails(userId, args) {
   const gmail = await requireClient(userId, 'gmail');
-  if (!gmail) return notConnected('Gmail');
+  if (!gmail) return { text: notConnected('Gmail'), display: null };
   const count = Math.min(Math.max(Number(args.count) || 5, 1), 10);
   const res = await gmail.users.messages.list({
     userId: 'me',
@@ -165,8 +174,9 @@ async function listRecentEmails(userId, args) {
     maxResults: count,
   });
   const msgs = res.data.messages || [];
-  if (!msgs.length) return 'Inbox is empty.';
+  if (!msgs.length) return { text: 'Inbox is empty.', display: null };
   const out = [];
+  const displayItems = [];
   for (const m of msgs) {
     const full = await gmail.users.messages.get({
       userId: 'me',
@@ -176,19 +186,25 @@ async function listRecentEmails(userId, args) {
     });
     const h = {};
     for (const header of full.data.payload.headers || []) h[header.name] = header.value;
-    out.push(`- id=${m.id} | From: ${h.From || '?'} | Subject: ${h.Subject || '(no subject)'} | ${h.Date || ''}`);
+    const item = { id: m.id, from: h.From || '?', subject: h.Subject || '(no subject)', date: h.Date || '' };
+    displayItems.push(item);
+    out.push(`- id=${item.id} | From: ${item.from} | Subject: ${item.subject} | ${item.date}`);
   }
-  return out.join('\n');
+  return { text: out.join('\n'), display: { kind: 'emails', items: displayItems } };
 }
 
 async function readEmail(userId, args) {
   const gmail = await requireClient(userId, 'gmail');
-  if (!gmail) return notConnected('Gmail');
+  if (!gmail) return { text: notConnected('Gmail'), display: null };
   const res = await gmail.users.messages.get({ userId: 'me', id: args.messageId, format: 'full' });
   const h = {};
   for (const header of res.data.payload.headers || []) h[header.name] = header.value;
   const body = extractText(res.data.payload);
-  return `From: ${h.From}\nSubject: ${h.Subject}\nDate: ${h.Date}\n\n${body.slice(0, 4000)}`;
+  const text = `From: ${h.From}\nSubject: ${h.Subject}\nDate: ${h.Date}\n\n${body.slice(0, 4000)}`;
+  return {
+    text,
+    display: { kind: 'email', from: h.From || '', subject: h.Subject || '', date: h.Date || '', body: body.slice(0, 4000) },
+  };
 }
 
 function extractText(part) {
@@ -207,7 +223,7 @@ function extractText(part) {
 
 async function searchDriveFiles(userId, args) {
   const drive = await requireClient(userId, 'drive');
-  if (!drive) return notConnected('Drive');
+  if (!drive) return { text: notConnected('Drive'), display: null };
   const q = `name contains '${String(args.query).replace(/'/g, "\\'")}' and trashed = false`;
   const res = await drive.files.list({
     q,
@@ -216,10 +232,20 @@ async function searchDriveFiles(userId, args) {
     pageSize: 10,
   });
   const files = res.data.files || [];
-  if (!files.length) return `No files found matching "${args.query}".`;
-  return files
-    .map((f) => `- ${f.name} | ${f.mimeType} | modified ${f.modifiedTime}${f.webViewLink ? ' | ' + f.webViewLink : ''}`)
-    .join('\n');
+  if (!files.length) return { text: `No files found matching "${args.query}".`, display: null };
+  const displayItems = files.map((f) => ({
+    id: f.id,
+    name: f.name,
+    mimeType: f.mimeType,
+    modifiedTime: f.modifiedTime,
+    url: f.webViewLink || '',
+  }));
+  return {
+    text: displayItems
+      .map((f) => `- ${f.name} | ${f.mimeType} | modified ${f.modifiedTime}${f.url ? ' | ' + f.url : ''}`)
+      .join('\n'),
+    display: { kind: 'files', items: displayItems },
+  };
 }
 
 async function findFileByName(userId, mimeType, name) {
@@ -243,29 +269,35 @@ async function readSheet(userId, args) {
     'application/vnd.google-apps.spreadsheet',
     args.spreadsheetName
   );
-  if (found.error) return found.error;
+  if (found.error) return { text: found.error, display: null };
   const sheets = await requireClient(userId, 'sheets');
-  if (!sheets) return notConnected('Sheets');
+  if (!sheets) return { text: notConnected('Sheets'), display: null };
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: found.file.id,
     range: args.range || 'A1:Z30',
   });
   const rows = res.data.values || [];
-  if (!rows.length) return `Spreadsheet "${found.file.name}" is empty.`;
-  return `Spreadsheet: ${found.file.name}\n` + rows.map((r) => r.join(' | ')).join('\n');
+  if (!rows.length) return { text: `Spreadsheet "${found.file.name}" is empty.`, display: null };
+  return {
+    text: `Spreadsheet: ${found.file.name}\n` + rows.map((r) => r.join(' | ')).join('\n'),
+    display: { kind: 'sheet', name: found.file.name, rows: rows.slice(0, 12) },
+  };
 }
 
 async function readDoc(userId, args) {
   const found = await findFileByName(userId, 'application/vnd.google-apps.document', args.documentName);
-  if (found.error) return found.error;
+  if (found.error) return { text: found.error, display: null };
   const docs = await requireClient(userId, 'docs');
-  if (!docs) return notConnected('Docs');
+  if (!docs) return { text: notConnected('Docs'), display: null };
   const res = await docs.documents.get({ documentId: found.file.id });
   const text = (res.data.body.content || [])
     .flatMap((el) => (el.paragraph ? el.paragraph.elements || [] : []))
     .map((el) => (el.textRun ? el.textRun.content : ''))
     .join('');
-  return `Document: ${found.file.name}\n\n${text.slice(0, 5000)}`;
+  return {
+    text: `Document: ${found.file.name}\n\n${text.slice(0, 5000)}`,
+    display: { kind: 'doc', name: found.file.name, text: text.slice(0, 5000) },
+  };
 }
 
 const READ_EXECUTORS = {
@@ -277,15 +309,21 @@ const READ_EXECUTORS = {
   read_doc: readDoc,
 };
 
-async function executeRead(userId, toolName, args) {
+async function executeReadRich(userId, toolName, args) {
   const fn = READ_EXECUTORS[toolName];
-  if (!fn) return `Unknown tool: ${toolName}`;
+  if (!fn) return { text: `Unknown tool: ${toolName}`, display: null };
   try {
     return await fn(userId, args || {});
   } catch (e) {
     console.error(`tool ${toolName} failed`, e);
-    return `ERROR: ${toolName} failed: ${e.message}`;
+    return { text: `ERROR: ${toolName} failed: ${e.message}`, display: null };
   }
+}
+
+// Text-only wrapper (used by /api/diag and anything that needs a string).
+async function executeRead(userId, toolName, args) {
+  const out = await executeReadRich(userId, toolName, args);
+  return out.text;
 }
 
 // ---------- write executors (only called AFTER user confirms) ----------
@@ -403,6 +441,7 @@ module.exports = {
   WRITE_TOOLS,
   WRITE_TOOL_NAMES,
   executeRead,
+  executeReadRich,
   executeWrite,
   summarizeWrite,
 };
