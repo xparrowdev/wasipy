@@ -46,6 +46,7 @@ function systemPrompt({ today, timezone, connected }) {
     '7. When the user asks you to create, book, or send something, call the write tool IMMEDIATELY with sensible defaults (title "Meeting" if none given, 1 hour long). Do NOT reply with a text proposal asking for confirmation or extra details first — the Yes/No card IS the confirmation step. Only ask a question first if a required detail is truly missing, for example no time was given at all.',
     '8. If a tool returns an ERROR, quote the error message exactly to the user. Never guess the cause, never invent a reason, and never tell the user to connect a service that the connected list shows as connected.',
     '9. Do not use markdown formatting (no **bold**, no # headers) — the chat shows plain text, so markdown looks broken. Use simple plain lines.',
+    '10. If the user asks you to try again after an error, ALWAYS call the tool again — never repeat an old error from the conversation history without retrying. Things the user fixes (like enabling an API) only show up if you retry.',
   ].join('\n');
 }
 
