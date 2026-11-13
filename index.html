@@ -96,12 +96,14 @@ h1,h2,h3{margin:0;font-weight:600}
 .panel li{font-size:13.8px;line-height:1.4}
 .panel li b{display:block;font-weight:600;font-size:13.8px}
 .panel li span{color:var(--muted);font-size:12.8px}
-.panel li.new b{color:var(--green)}
-.sheet-table{width:100%;border-collapse:collapse;font-size:13.8px}
-.sheet-table th{text-align:left;color:var(--faint);font-weight:600;padding:4px 6px 6px 0;border-bottom:1px solid var(--line);font-size:11.5px;text-transform:uppercase;letter-spacing:.05em}
-.sheet-table th:last-child,.sheet-table td:last-child{text-align:right;padding-right:0}
-.sheet-table td{padding:6px 6px 6px 0;border-bottom:1px solid var(--line)}
-.sheet-table tr.total td{font-weight:700;border-bottom:0}
+.svc-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.svc-row .svc-name{font-weight:600;font-size:14px;display:flex;align-items:center;gap:8px}
+.svc-row .dot{width:8px;height:8px;border-radius:50%;background:var(--faint);flex:none}
+.svc-row.on .dot{background:var(--green)}
+.svc-row .svc-mail{color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
+.svc-btn{flex:none;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:600;cursor:pointer}
+.svc-btn:hover{background:var(--hover)}
+.svc-btn.off{color:var(--red)}
 .log-panel ul{gap:5px}
 .log-panel li{font-size:13px;color:var(--muted);display:flex;gap:8px;align-items:flex-start}
 .log-panel li .tick{color:var(--green);font-weight:700;flex:none}
@@ -120,7 +122,7 @@ footer{max-width:1120px;margin:0 auto;padding:6px 20px 30px;color:var(--faint);f
     <div class="right">
       <span class="status" id="statusPill"><i></i> Not connected</span>
       <button class="btn-g" id="connectBtn" type="button"><span class="g">G</span> Continue with Google</button>
-      <button class="btn-disconnect" id="disconnectBtn" type="button" style="display:none">Disconnect</button>
+      <button class="btn-disconnect" id="disconnectBtn" type="button" style="display:none">Sign out</button>
     </div>
   </div>
 </header>
@@ -130,13 +132,13 @@ footer{max-width:1120px;margin:0 auto;padding:6px 20px 30px;color:var(--faint);f
   <main class="chat-col">
     <div class="greeting">
       <h1>Hi, I’m Wasipy. How can I help today?</h1>
-      <p>Sign in with your own Google account, then ask in plain English. I’ll work in your Calendar, Gmail, Drive, and Sheets.</p>
+      <p>Sign in with your own Google account, then ask in plain English. I’ll work in your Calendar, Gmail, Drive, Sheets, and Docs.</p>
     </div>
 
     <div class="chat-log" id="chatLog">
       <div class="msg agent">Hi, I’m Wasipy. I don’t just answer — I get things done in your Google apps.
 
-First, tap “Continue with Google” above. Then try one of the suggestions below.</div>
+First, tap “Continue with Google” above. Then connect the services you want me to use, on the right.</div>
     </div>
     <div class="typing" id="typing"><i></i><i></i><i></i></div>
 
@@ -152,7 +154,7 @@ First, tap “Continue with Google” above. Then try one of the suggestions bel
       <input id="chatInput" type="text" placeholder="Message the agent…" autocomplete="off" aria-label="Message the agent">
       <button class="send" type="submit" aria-label="Send">↑</button>
     </form>
-    <p class="demo-note">Demo · sample data for one fictional customer. In the live version, each signed-in customer sees only their own data.</p>
+    <p class="demo-note">Wasipy works only in the Google account you connect. Your data is never shared with other users.</p>
   </main>
 
   <aside class="rail">
@@ -161,34 +163,13 @@ First, tap “Continue with Google” above. Then try one of the suggestions bel
       <div class="who"><span id="whoName">Not signed in</span><small id="whoMail">Connect Google to start</small></div>
     </div>
     <div class="panel">
-      <h3>Calendar</h3>
-      <ul id="calList">
-        <li><b>Team sync with Alex</b><span>Today · 4:00 PM</span></li>
-        <li><b>Dentist appointment</b><span>Tomorrow · 9:00 AM</span></li>
-      </ul>
-    </div>
-    <div class="panel">
-      <h3>Gmail</h3>
-      <ul id="mailList">
-        <li><b>Online Store</b><span>Your order has shipped…</span></li>
-        <li><b>Bank</b><span>Your October statement is ready…</span></li>
-      </ul>
-    </div>
-    <div class="panel">
-      <h3>Sheet — Expenses</h3>
-      <table class="sheet-table">
-        <thead><tr><th>Item</th><th>Amount</th></tr></thead>
-        <tbody id="sheetBody">
-          <tr><td>Groceries</td><td>$120</td></tr>
-          <tr><td>Transport</td><td>$45</td></tr>
-          <tr class="total"><td>Total</td><td id="sheetTotal">$165</td></tr>
-        </tbody>
-      </table>
+      <h3>Connected services</h3>
+      <ul id="svcList"></ul>
     </div>
     <div class="panel log-panel">
       <h3>Activity</h3>
       <ul id="actionLog">
-        <li><span class="tick">•</span><span>Agent ready. Connect Google to begin.</span></li>
+        <li><span class="tick">•</span><span>Agent ready. Sign in with Google to begin.</span></li>
       </ul>
     </div>
   </aside>
@@ -199,15 +180,24 @@ First, tap “Continue with Google” above. Then try one of the suggestions bel
 
 <script>
 (function(){
-  var connected=false, pendingMail=false, total=165;
   var chatLog=document.getElementById('chatLog'), typing=document.getElementById('typing'), log=document.getElementById('actionLog');
   var form=document.getElementById('chatForm'), input=document.getElementById('chatInput');
   var connectBtn=document.getElementById('connectBtn'), disconnectBtn=document.getElementById('disconnectBtn');
   var statusPill=document.getElementById('statusPill'), avatar=document.getElementById('avatar');
   var whoName=document.getElementById('whoName'), whoMail=document.getElementById('whoMail');
+  var svcList=document.getElementById('svcList');
+  var signedIn=false, sending=false;
+
+  var SERVICES=[
+    {id:'calendar',label:'Calendar'},
+    {id:'gmail',label:'Gmail'},
+    {id:'drive',label:'Drive'},
+    {id:'sheets',label:'Sheets'},
+    {id:'docs',label:'Docs'}
+  ];
 
   function scrollChat(){ window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'}); }
-  function money(n){return '$'+n.toString().replace(/\B(?=(\d{3})+(?!\d))/g,',');}
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function addMsg(text,who){
     var d=document.createElement('div'); d.className='msg '+who;
     d.textContent=text; chatLog.appendChild(d); scrollChat(); return d;
@@ -217,126 +207,137 @@ First, tap “Continue with Google” above. Then try one of the suggestions bel
     li.innerHTML='<span class="tick">'+(working?'…':'✓')+'</span><span></span>';
     li.querySelectorAll('span')[1].textContent=text; log.appendChild(li); return li;
   }
-  function runSteps(steps,done){
-    var i=0; typing.classList.add('show');
-    (function next(){
-      if(i<steps.length){
-        var li=addLog(steps[i],true);
-        setTimeout(function(){li.classList.remove('working');li.querySelector('.tick').textContent='✓';i++;next();},620);
-      } else { typing.classList.remove('show'); if(done)done(); }
-    })();
+  function setLog(items){
+    log.innerHTML='';
+    if(!items.length){ addLog('Nothing yet. Ask me to do something.'); return; }
+    items.forEach(function(it){ addLog(it.text); });
   }
-  function agentSay(steps,reply,effect){ runSteps(steps,function(){addMsg(reply,'agent'); if(effect)effect();}); }
 
-  function addConfirmMsg(text){
+  function renderServices(connections){
+    var map={}; (connections||[]).forEach(function(c){ map[c.service]=c; });
+    svcList.innerHTML='';
+    SERVICES.forEach(function(s){
+      var c=map[s.id];
+      var li=document.createElement('li'); li.className='svc-row'+(c?' on':'');
+      li.innerHTML='<span class="svc-name"><span class="dot"></span>'+esc(s.label)+'</span>'+
+        (c?'<span class="svc-mail">'+esc(c.email||'Connected')+'</span>':'')+
+        '<button class="svc-btn'+(c?' off':'')+'" type="button" data-svc="'+s.id+'" data-on="'+(c?'1':'0')+'">'+(c?'Disconnect':'Connect')+'</button>';
+      svcList.appendChild(li);
+    });
+  }
+
+  svcList.addEventListener('click',function(e){
+    var b=e.target.closest('[data-svc]'); if(!b)return;
+    var svc=b.getAttribute('data-svc'), on=b.getAttribute('data-on')==='1';
+    if(!signedIn){ addMsg('Sign in with Google first, then you can connect '+svc+'.','agent'); return; }
+    if(on){
+      b.disabled=true;
+      fetch('/api/connections?service='+encodeURIComponent(svc),{method:'DELETE'})
+        .then(function(r){return r.json();})
+        .then(function(){ loadMe(); loadActivity(); addLog('Disconnected '+svc); });
+    } else {
+      window.location.href='/api/auth/google?action=connect&service='+encodeURIComponent(svc);
+    }
+  });
+
+  function loadMe(){
+    return fetch('/api/auth/me').then(function(r){return r.json();}).then(function(data){
+      signedIn=!!data.user;
+      renderServices(data.connections||[]);
+      if(data.user){
+        statusPill.innerHTML='<i></i> Connected · '+(data.connections||[]).length+' service'+((data.connections||[]).length===1?'':'s');
+        statusPill.classList.add('on');
+        avatar.textContent=(data.user.name||data.user.email||'?').charAt(0).toUpperCase();
+        whoName.textContent=data.user.name||data.user.email;
+        whoMail.textContent=data.user.email;
+        connectBtn.style.display='none'; disconnectBtn.style.display='';
+      } else {
+        statusPill.innerHTML='<i></i> Not connected'; statusPill.classList.remove('on');
+        avatar.textContent='?'; whoName.textContent='Not signed in'; whoMail.textContent='Connect Google to start';
+        connectBtn.style.display=''; disconnectBtn.style.display='none';
+      }
+    }).catch(function(){});
+  }
+
+  function loadActivity(){
+    fetch('/api/activity').then(function(r){return r.json();}).then(function(data){
+      if(data.activity) setLog(data.activity);
+    }).catch(function(){});
+  }
+
+  function loadHistory(){
+    fetch('/api/chat').then(function(r){ if(!r.ok) return null; return r.json(); }).then(function(data){
+      if(!data||!data.messages||!data.messages.length) return;
+      chatLog.innerHTML='';
+      data.messages.forEach(function(m){ addMsg(m.content, m.role==='user'?'user':'agent'); });
+    }).catch(function(){});
+  }
+
+  function addConfirmCard(text, pending){
     var d=addMsg(text,'agent');
     var row=document.createElement('div'); row.className='confirm-row';
-    var yes=document.createElement('button'); yes.type='button'; yes.className='yes'; yes.textContent='Yes, send it';
-    var no=document.createElement('button'); no.type='button'; no.className='no'; no.textContent='No, keep as draft';
-    yes.addEventListener('click',function(){
-      row.remove(); pendingMail=false;
-      agentSay(['Sending via Gmail…'],'Sent ✓\nThe confirmation email to Alex is on its way. You’ll see it in the Gmail panel.',function(){
-        var ul=document.getElementById('mailList'); var li=document.createElement('li'); li.className='new';
-        li.innerHTML='<b>Sent → Alex</b><span>Confirming tomorrow’s 10:00 AM meeting</span>'; ul.insertBefore(li,ul.firstChild);
-      });
-    });
-    no.addEventListener('click',function(){ row.remove(); pendingMail=false; agentSay([],'No problem — I left it as a draft in Gmail. You can send it later.'); });
+    var yes=document.createElement('button'); yes.type='button'; yes.className='yes'; yes.textContent='Yes, do it';
+    var no=document.createElement('button'); no.type='button'; no.className='no'; no.textContent='No, cancel';
+    function answer(confirm){
+      row.remove();
+      typing.classList.add('show');
+      fetch('/api/actions/confirm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({actionId:pending.actionId,confirm:confirm})})
+        .then(function(r){return r.json();})
+        .then(function(data){
+          typing.classList.remove('show');
+          addMsg(data.result||(confirm?'Done.':'Cancelled.'),'agent');
+          loadActivity();
+        })
+        .catch(function(){ typing.classList.remove('show'); addMsg('Something went wrong. Please try again.','agent'); });
+    }
+    yes.addEventListener('click',function(){ answer(true); });
+    no.addEventListener('click',function(){ answer(false); });
     row.appendChild(yes); row.appendChild(no); d.appendChild(row); scrollChat();
   }
 
-  function handle(text){
-    var t=text.toLowerCase();
-    if(!connected){ agentSay([],'Connect Google first using the button above — then I can work in your Calendar, Gmail, Drive, and Sheets. Until then, I can only chat.'); return; }
-    if(pendingMail){ agentSay([],'Let’s finish the email above first — send it, or keep it as a draft? Then I’ll take the next task.'); return; }
-
-    var hasNum=/\d/.test(t);
-    if((t.indexOf('sheet')>-1||t.indexOf('expense')>-1||t.indexOf('log')>-1||t.indexOf('spent')>-1||t.indexOf('cost')>-1)&&hasNum){
-      var m=t.match(/\$?\s*(\d[\d,]*)/); var amount=parseInt(m[1].replace(/,/g,''),10);
-      var item='Expense';
-      if(t.indexOf('grocer')>-1)item='Groceries'; else if(t.indexOf('transport')>-1||t.indexOf('uber')>-1||t.indexOf('taxi')>-1)item='Transport';
-      else if(t.indexOf('lunch')>-1||t.indexOf('food')>-1||t.indexOf('dinner')>-1)item='Food'; else if(t.indexOf('bill')>-1)item='Bill';
-      agentSay(['Opening your sheet…','Adding a new row: '+item+' — '+money(amount)+'…','Updating the total…'],
-        'Done ✓\nLogged '+money(amount)+' for '+item.toLowerCase()+' in your sheet. Your new total is '+money(total+amount)+'.',
-        function(){
-          total+=amount;
-          var tbody=document.getElementById('sheetBody'); var tr=document.createElement('tr');
-          tr.innerHTML='<td></td><td></td>';
-          tr.children[0].textContent=item; tr.children[1].textContent=money(amount);
-          tbody.insertBefore(tr,tbody.lastElementChild);
-          document.getElementById('sheetTotal').textContent=money(total);
-        });
+  function send(text){
+    if(sending) return;
+    if(!signedIn){
+      addMsg(text,'user');
+      addMsg('Connect Google first using the button above — then I can work in your Calendar, Gmail, Drive, Sheets, and Docs. Until then, I can only chat.','agent');
       return;
     }
-    if(t.indexOf('meeting')>-1||t.indexOf('book')>-1||t.indexOf('schedule a')>-1||t.indexOf('appointment')>-1){
-      agentSay(['Opening your calendar…','Checking that time is free…','Creating the event…'],
-        'Done ✓\nBooked for tomorrow at 10:00 AM — see the new event in the Calendar panel. Want me to email a confirmation too? Just say “draft an email”.',
-        function(){
-          var ul=document.getElementById('calList'); var li=document.createElement('li'); li.className='new';
-          li.innerHTML='<b>New meeting (just booked)</b><span>Tomorrow · 10:00 AM</span>'; ul.insertBefore(li,ul.firstChild);
-        });
-      return;
-    }
-    if(t.indexOf('mail')>-1||t.indexOf('email')>-1||t.indexOf('inbox')>-1){
-      if(t.indexOf('new')>-1||t.indexOf('show')>-1||t.indexOf('read')>-1||t.indexOf('check')>-1){
-        agentSay(['Checking your inbox…','Summarizing the important ones…'],
-          'You have 2 important new emails:\n\n1) Online Store — your order has shipped.\n2) Bank — your October statement is ready.\n\nWant details on either one?');
-        return;
-      }
-      pendingMail=true;
-      runSteps(['Drafting in Gmail…'],function(){
-        addConfirmMsg('Draft ready:\n\n“Hi Alex, confirming our meeting tomorrow at 10:00 AM. See you then.”\n\nShould I send it?');
-      });
-      return;
-    }
-    if(t.indexOf('drive')>-1||t.indexOf('file')>-1||t.indexOf('invoice')>-1||t.indexOf('find')>-1||t.indexOf('document')>-1){
-      agentSay(['Searching Drive…','Collecting matches…'],
-        'Found it ✓\nMatching files in your Drive:\n\nInvoice-October.pdf\nInvoice-September.pdf\nExpenses-2026.xlsx\n\nAsk for any one and I’ll summarize it.');
-      return;
-    }
-    if(t.indexOf('today')>-1||t.indexOf('schedule')>-1||t.indexOf('what do i have')>-1||t.indexOf("what's on")>-1){
-      agentSay(['Reading today’s calendar…'],
-        'Here’s today:\n\n• 4:00 PM — Team sync with Alex\n• 8:00 PM — Dinner with family\n\nTomorrow starts with a 9:00 AM dentist appointment.');
-      return;
-    }
-    if(t.indexOf('sheet')>-1||t.indexOf('total')>-1||t.indexOf('spending')>-1){
-      agentSay(['Reading your sheet…'],'So far this month you’ve logged '+money(total)+' in total. The full breakdown is in the Sheets panel on the right.');
-      return;
-    }
-    if(/\b(hi|hello|hey)\b/.test(t)){
-      agentSay([],'Hello! What should I do first — book something, check your mail, find a file, or log an expense?');
-      return;
-    }
-    agentSay(['Understanding your request…'],
-      'Got it. In this demo I’m best at:\n\n• “Book a meeting tomorrow at 10 AM”\n• “Show my new emails” / “Draft an email”\n• “Find the invoice in Drive”\n• “Log a $50 expense in my sheet”\n\nThe live version, powered by a real AI model, handles free-form requests like this one too.');
+    sending=true; addMsg(text,'user'); typing.classList.add('show');
+    var tz='UTC';
+    try{ tz=Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC'; }catch(e){}
+    fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,timezone:tz})})
+      .then(function(r){return r.json().then(function(d){ return {ok:r.ok,data:d}; });})
+      .then(function(w){
+        typing.classList.remove('show'); sending=false;
+        if(!w.ok){ addMsg(w.data.error||'Something went wrong. Please try again.','agent'); return; }
+        if(w.data.pendingAction){ addConfirmCard(w.data.reply, w.data.pendingAction); }
+        else { addMsg(w.data.reply,'agent'); }
+        loadActivity();
+      })
+      .catch(function(){ typing.classList.remove('show'); sending=false; addMsg('Something went wrong. Please try again.','agent'); });
   }
 
   connectBtn.addEventListener('click',function(){
-    connectBtn.textContent='Connecting…'; connectBtn.disabled=true;
-    setTimeout(function(){
-      connected=true;
-      statusPill.innerHTML='<i></i> Connected · Demo'; statusPill.classList.add('on');
-      avatar.textContent='D'; whoName.textContent='Demo Customer'; whoMail.textContent='demo.customer@gmail.com · 4 apps granted';
-      connectBtn.style.display='none'; disconnectBtn.style.display='';
-      addLog('Signed in with Google (demo)');
-      addLog('Permissions granted: Calendar, Gmail, Drive, Sheets');
-      agentSay([],'You’re connected ✓\nI can now work in your Calendar, Gmail, Drive, and Sheets.\n\nTry one of the suggestions — or type your own instruction.');
-    },650);
+    window.location.href='/api/auth/google?action=login';
   });
 
   disconnectBtn.addEventListener('click',function(){
-    connected=false; pendingMail=false;
-    statusPill.innerHTML='<i></i> Not connected'; statusPill.classList.remove('on');
-    avatar.textContent='?'; whoName.textContent='Not signed in'; whoMail.textContent='Connect Google to start';
-    connectBtn.style.display=''; connectBtn.disabled=false; connectBtn.innerHTML='<span class="g">G</span> Continue with Google';
-    disconnectBtn.style.display='none';
-    addLog('Disconnected — access revoked');
-    agentSay([],'Disconnected. I can no longer access your Google data. Connect again whenever you’re ready.');
+    fetch('/api/auth/logout',{method:'POST'}).then(function(){ window.location.reload(); });
   });
 
-  form.addEventListener('submit',function(e){ e.preventDefault(); var v=input.value.trim(); if(!v)return; input.value=''; addMsg(v,'user'); handle(v); });
+  form.addEventListener('submit',function(e){ e.preventDefault(); var v=input.value.trim(); if(!v)return; input.value=''; send(v); });
   document.getElementById('chips').addEventListener('click',function(e){
-    var b=e.target.closest('[data-q]'); if(!b)return; var q=b.getAttribute('data-q'); addMsg(q,'user'); handle(q);
+    var b=e.target.closest('[data-q]'); if(!b)return; send(b.getAttribute('data-q'));
   });
+
+  // After returning from Google, show what happened.
+  var params=new URLSearchParams(window.location.search);
+  if(params.get('connected')){ addLog('Connected '+params.get('connected')); }
+  if(params.get('error')){ addMsg(params.get('error'),'agent'); }
+  if(params.get('signin')==='required'){ addMsg('Please sign in with Google first.','agent'); }
+  if(params.toString()){ window.history.replaceState({},'',window.location.pathname); }
+
+  loadMe().then(function(){ if(signedIn){ loadHistory(); loadActivity(); } });
 })();
 </script>
 </body>
