@@ -8,16 +8,18 @@
 <title>Wasipy</title>
 <style>
 :root{
-  --bg:#ffffff; --rail:#f9f9f9; --ink:#0d0d0d; --muted:#6b6b6b; --faint:#9b9b9b;
-  --line:#e7e7e7; --bubble:#f4f4f4; --hover:#ececec; --btn:#0d0d0d; --btn-ink:#ffffff;
+  --bg:#fdfdfc; --bg-soft:rgba(253,253,252,.85); --rail:#f6f5f2; --ink:#141412; --muted:#6f6d66; --faint:#a3a099;
+  --line:#e8e6e0; --bubble:#f1f0eb; --hover:#eceae4; --btn:#141412; --btn-ink:#ffffff;
   --green:#1a7f37; --amber:#9a6700; --red:#b42318;
+  --brand:#4f46e5; --brand-grad:linear-gradient(135deg,#4f46e5,#7c3aed 55%,#2563eb);
   --shadow:0 8px 30px rgba(0,0,0,.08),0 2px 6px rgba(0,0,0,.05);
 }
 @media (prefers-color-scheme: dark){
   :root{
-    --bg:#0d0d0d; --rail:#171717; --ink:#ececec; --muted:#a3a3a3; --faint:#7a7a7a;
-    --line:#2b2b2b; --bubble:#2f2f2f; --hover:#242424; --btn:#ececec; --btn-ink:#0d0d0d;
+    --bg:#101013; --bg-soft:rgba(16,16,19,.85); --rail:#191920; --ink:#f0f0f2; --muted:#a8a8b0; --faint:#7c7c86;
+    --line:#2a2a31; --bubble:#232329; --hover:#22222a; --btn:#f0f0f2; --btn-ink:#101013;
     --green:#4ac26b; --amber:#e3b341; --red:#ff8a7a;
+    --brand:#818cf8; --brand-grad:linear-gradient(135deg,#6366f1,#8b5cf6 55%,#3b82f6);
     --shadow:0 8px 30px rgba(0,0,0,.5),0 2px 6px rgba(0,0,0,.4);
   }
 }
@@ -28,7 +30,7 @@ button{font-family:inherit}
 h1,h2,h3{margin:0;font-weight:600}
 
 /* Top bar */
-.topbar{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
+.topbar{position:sticky;top:0;z-index:20;background:var(--bg-soft);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
 .topbar-in{max-width:1120px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
 .topbar .title{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px;white-space:nowrap}
 .topbar .title .chev{color:var(--faint);font-size:13px;font-weight:400}
@@ -62,15 +64,16 @@ h1,h2,h3{margin:0;font-weight:600}
 .confirm-row button{border:0;cursor:pointer;font-weight:600;font-size:14px;padding:8px 16px;border-radius:999px}
 .confirm-row .yes{background:var(--btn);color:var(--btn-ink)}
 .confirm-row .no{background:transparent;color:var(--ink);border:1px solid var(--line)}
-.typing{display:none;align-items:center;gap:10px;padding:8px 0}
-.typing.show{display:inline-flex}
-.think-orb{position:relative;width:14px;height:14px;flex:none}
-.think-orb::before{content:'';position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,#4285f4,#34a853,#fbbc05,#ea4335,#4285f4);animation:orbSpin 1.6s linear infinite}
-.think-orb::after{content:'';position:absolute;inset:-5px;border-radius:50%;border:1.5px solid var(--faint);animation:orbPing 1.6s ease-out infinite}
+.typing{display:none;padding:4px 0}
+.typing.show{display:block}
+.work-pill{display:inline-flex;align-items:center;gap:9px;background:var(--bubble);border-radius:999px;padding:9px 15px;position:relative;overflow:hidden}
+.work-dot{width:8px;height:8px;border-radius:50%;background:conic-gradient(from 0deg,#4285f4,#34a853,#fbbc05,#ea4335,#4285f4);animation:orbSpin 1.4s linear infinite;flex:none}
 @keyframes orbSpin{to{transform:rotate(360deg)}}
-@keyframes orbPing{0%{transform:scale(.6);opacity:.9}100%{transform:scale(1.5);opacity:0}}
-.think-txt{font-size:13.5px;background:linear-gradient(90deg,var(--muted) 40%,var(--ink) 50%,var(--muted) 60%);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shimmer 1.6s linear infinite}
-@keyframes shimmer{to{background-position:-200% 0}}
+.work-txt{font-size:13.5px;color:var(--muted);transition:opacity .25s ease;white-space:nowrap}
+.work-txt.swap{opacity:0}
+.work-bar{position:absolute;left:0;right:0;bottom:0;height:2px;background:transparent;overflow:hidden}
+.work-bar::after{content:'';position:absolute;top:0;height:100%;width:35%;border-radius:2px;background:linear-gradient(90deg,transparent,#4285f4,#34a853,transparent);animation:workSlide 1.5s ease-in-out infinite}
+@keyframes workSlide{0%{left:-35%}100%{left:100%}}
 
 /* Rich result cards */
 .cards{display:flex;flex-direction:column;gap:8px;margin-top:12px}
@@ -109,8 +112,10 @@ h1,h2,h3{margin:0;font-weight:600}
 /* Suggestion cards */
 .suggest{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 0 4px}
 @media(max-width:560px){.suggest{grid-template-columns:1fr}}
-.sug-card{text-align:left;background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:13px 15px;cursor:pointer;transition:background .15s,border-color .15s,transform .15s ease,box-shadow .15s ease;color:var(--ink)}
+.sug-card{position:relative;overflow:hidden;text-align:left;background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:13px 15px;cursor:pointer;transition:background .15s,border-color .15s,transform .15s ease,box-shadow .15s ease;color:var(--ink)}
 .sug-card:hover{background:var(--rail);transform:translateY(-2px);box-shadow:var(--shadow)}
+.sug-card::after{content:'';position:absolute;top:0;left:-80%;width:50%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.35),transparent);transform:skewX(-20deg);transition:left .5s ease;pointer-events:none}
+.sug-card:hover::after{left:130%}
 .sug-card b{display:block;font-size:14.5px;font-weight:600}
 .sug-card span{display:block;color:var(--muted);font-size:13.5px;margin-top:1px}
 
@@ -119,13 +124,13 @@ h1,h2,h3{margin:0;font-weight:600}
 .composer input{flex:1;border:0;background:transparent;font-family:inherit;font-size:15.5px;color:var(--ink);min-width:0;padding:8px 0}
 .composer input:focus{outline:none}
 .composer input::placeholder{color:var(--faint)}
-.send{flex:none;width:36px;height:36px;border-radius:50%;border:0;background:var(--btn);color:var(--btn-ink);font-size:16px;cursor:pointer;display:grid;place-items:center;line-height:1;transition:transform .12s ease,opacity .15s}
-.send:hover{opacity:.85}
+.send{flex:none;width:36px;height:36px;border-radius:50%;border:0;background:var(--brand-grad);color:#fff;font-size:16px;cursor:pointer;display:grid;place-items:center;line-height:1;transition:transform .12s ease,opacity .15s;box-shadow:0 2px 10px rgba(79,70,229,.35)}
+.send:hover{opacity:.9}
 .send:active{transform:scale(.9)}
 .demo-note{font-size:12.5px;color:var(--faint);text-align:center;padding:10px 10px 0}
 
 /* Rail */
-.rail{display:flex;flex-direction:column;background:var(--rail);border-radius:20px;padding:8px 18px}
+.rail{display:flex;flex-direction:column;background:var(--rail);border:1px solid var(--line);border-radius:20px;padding:8px 18px}
 .rail .acct{display:flex;align-items:center;gap:11px;padding:14px 0;border-bottom:1px solid var(--line)}
 .avatar{width:36px;height:36px;border-radius:50%;background:var(--bubble);color:var(--muted);display:grid;place-items:center;font-weight:600;font-size:15px;flex:none}
 .who{font-weight:600;line-height:1.3;font-size:14.5px;min-width:0}
@@ -168,16 +173,51 @@ h1,h2,h3{margin:0;font-weight:600}
 @keyframes rowGlow{0%,100%{background:transparent}50%{background:rgba(26,127,55,.14)}}
 
 /* In-site preview drawer — files open inside Wasipy, no new tab needed */
-.drawer-back{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .25s ease}
+.drawer-back{position:fixed;inset:0;z-index:40;background:rgba(10,10,20,.35);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .25s ease}
 .drawer-back.open{opacity:1;pointer-events:auto}
-.drawer{position:fixed;top:0;right:0;bottom:0;z-index:41;width:min(720px,94vw);background:var(--bg);box-shadow:var(--shadow);transform:translateX(102%);transition:transform .3s cubic-bezier(.2,.9,.3,1);display:flex;flex-direction:column}
+.drawer{position:fixed;top:0;right:0;bottom:0;z-index:41;width:min(760px,96vw);background:var(--bg);border-radius:22px 0 0 22px;box-shadow:-16px 0 50px rgba(0,0,0,.22);transform:translateX(103%);transition:transform .38s cubic-bezier(.2,.9,.25,1);display:flex;flex-direction:column;overflow:hidden}
 .drawer.open{transform:none}
-.drawer-head{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
-.drawer-head b{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14.5px}
+.drawer-head{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line);background:var(--rail)}
+.drawer-head .file-ic{width:40px;height:40px;border-radius:11px;font-size:13px}
+.drawer-title{min-width:0;flex:1}
+.drawer-title b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14.5px}
+.drawer-title span{display:block;color:var(--muted);font-size:12.5px;margin-top:1px}
 .drawer-head a,.drawer-head button{flex:none}
-.drawer-body{flex:1;min-height:0}
-.drawer-body iframe{width:100%;height:100%;border:0}
-@media(max-width:900px){.drawer{width:100vw}}
+.drawer-body{flex:1;min-height:0;position:relative;background:var(--rail)}
+.drawer-body iframe{width:100%;height:100%;border:0;position:relative;z-index:1;background:var(--bg)}
+.drawer-loading{position:absolute;inset:0;display:grid;place-items:center;z-index:0}
+.drawer-loading .load-bar{width:120px;height:6px;border-radius:99px;background:var(--line);overflow:hidden;position:relative}
+.drawer-loading .load-bar::after{content:'';position:absolute;top:0;left:-40%;width:40%;height:100%;border-radius:99px;background:var(--brand-grad);animation:loadSlide 1.1s ease-in-out infinite}
+@keyframes loadSlide{to{left:110%}}
+@media(max-width:900px){.drawer{width:100vw;border-radius:0}}
+
+/* Confirm card: optional details form */
+.details-toggle{background:none;border:0;color:var(--brand);font-size:13.5px;font-weight:600;cursor:pointer;padding:8px 0 2px}
+.details-form{display:none;flex-direction:column;gap:6px;margin-top:8px}
+.details-form.open{display:flex}
+.details-form label{font-size:12px;color:var(--muted);font-weight:600}
+.details-form input,.details-form textarea{font-family:inherit;font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 12px;width:100%}
+.details-form textarea{resize:vertical;min-height:54px}
+.details-form input:focus,.details-form textarea:focus{outline:2px solid var(--brand);outline-offset:-1px;border-color:transparent}
+
+/* Reminders panel */
+.rem-item{display:flex;align-items:flex-start;gap:8px}
+.rem-item .rem-txt{flex:1;min-width:0}
+.rem-item b{display:block;font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rem-item span{color:var(--muted);font-size:12.5px}
+.rem-del{flex:none;border:0;background:transparent;color:var(--faint);cursor:pointer;font-size:16px;line-height:1;padding:2px}
+.rem-del:hover{color:var(--red)}
+.rem-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.cron-box{display:none;margin-top:10px}
+.cron-box.show{display:block}
+.cron-box p{font-size:12.5px;color:var(--muted);margin:0 0 6px;line-height:1.5}
+.cron-box input{width:100%;font-size:11.5px;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+
+/* Reminder toast */
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,160%);z-index:60;background:var(--ink);color:var(--bg);border-radius:14px;padding:13px 18px;font-size:14px;box-shadow:var(--shadow);transition:transform .4s cubic-bezier(.2,.9,.3,1.2);max-width:min(480px,92vw);cursor:pointer}
+.toast.show{transform:translate(-50%,0)}
+.toast b{display:block}
+.toast span{opacity:.75;font-size:13px}
 
 footer{max-width:1120px;margin:0 auto;padding:6px 20px 30px;color:var(--faint);font-size:12.5px;text-align:center}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
@@ -211,7 +251,7 @@ footer{max-width:1120px;margin:0 auto;padding:6px 20px 30px;color:var(--faint);f
 
 First, tap “Continue with Google” above. Then connect the services you want me to use, on the right.</div>
     </div>
-    <div class="typing" id="typing"><span class="think-orb"></span><span class="think-txt">Wasipy is thinking…</span></div>
+    <div class="typing" id="typing"><span class="work-pill"><span class="work-dot"></span><span class="work-txt" id="workTxt">Thinking…</span><span class="work-bar"></span></span></div>
 
     <div class="suggest" id="chips">
       <button class="sug-card" type="button" data-q="Book a meeting with Dr. Lee tomorrow at 10 AM"><b>Book a meeting</b><span>Tomorrow at 10 AM, in your Calendar</span></button>
@@ -237,6 +277,20 @@ First, tap “Continue with Google” above. Then connect the services you want 
       <h3>Connected services</h3>
       <ul id="svcList"></ul>
     </div>
+    <div class="panel" id="remPanel">
+      <h3>Reminders</h3>
+      <ul id="remList">
+        <li><span>Nothing scheduled yet. Ask me to remind you about anything.</span></li>
+      </ul>
+      <div class="rem-actions">
+        <button class="svc-btn" id="notifBtn" type="button">Enable notifications</button>
+        <button class="svc-btn" id="emailRemBtn" type="button">Email reminders</button>
+      </div>
+      <div class="cron-box" id="cronBox">
+        <p>Paste this link into cron-job.org (free, every 5 minutes) and reminder emails will reach you even when this tab is closed:</p>
+        <input id="cronUrl" readonly>
+      </div>
+    </div>
     <div class="panel log-panel">
       <h3>Activity</h3>
       <ul id="actionLog">
@@ -252,12 +306,20 @@ First, tap “Continue with Google” above. Then connect the services you want 
 <div class="drawer-back" id="drawerBack"></div>
 <aside class="drawer" id="drawer" aria-label="File preview">
   <div class="drawer-head">
-    <b id="drawerTitle">Preview</b>
+    <div class="file-ic file" id="drawerIcon">•</div>
+    <div class="drawer-title">
+      <b id="drawerTitle">Preview</b>
+      <span id="drawerMeta"></span>
+    </div>
     <a class="btn-quiet" id="drawerOpen" href="#" target="_blank" rel="noopener" style="text-decoration:none">Open in new tab</a>
     <button class="btn-quiet" id="drawerClose" type="button">Close</button>
   </div>
-  <div class="drawer-body" id="drawerBody"></div>
+  <div class="drawer-body" id="drawerBody">
+    <div class="drawer-loading" id="drawerLoading"><div class="load-bar"></div></div>
+  </div>
 </aside>
+
+<div class="toast" id="toast"></div>
 
 <script>
 (function(){
@@ -280,12 +342,48 @@ First, tap “Continue with Google” above. Then connect the services you want 
 
   function scrollChat(){ window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'}); }
   function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  // Old messages saved before rich cards sometimes contain raw pasted
+  // links / markdown. Show them cleaned up (cards carry the real links).
+  function cleanDisplayText(text){
+    return String(text)
+      .replace(/\[([^\]]+)\]\([^)]+\)/g,'$1')
+      .replace(/https?:\/\/\S+/g,'')
+      .replace(/[ \t]{2,}/g,' ')
+      .replace(/\n{3,}/g,'\n\n')
+      .trim();
+  }
   function addMsg(text,who,display){
     var d=document.createElement('div'); d.className='msg '+who;
-    d.textContent=text;
+    d.textContent=(who==='agent')?cleanDisplayText(text):text;
     if(display) renderDisplay(display,d);
     chatLog.appendChild(d); scrollChat(); return d;
   }
+
+  // Working indicator: rotating status phrases while the agent works,
+  // instead of the old plain typing dots. Starts/stops automatically
+  // whenever the typing element gets/loses its .show class.
+  var workTxt=document.getElementById('workTxt');
+  var WORK_PHRASES=['Thinking…','Checking your Google apps…','Searching your Drive…','Reading your Gmail…','Checking your Calendar…','Putting it together…'];
+  var workIdx=0, workTimer=null;
+  function startWork(){
+    if(workTimer||!workTxt)return;
+    workIdx=0; workTxt.textContent=WORK_PHRASES[0]; workTxt.classList.remove('swap');
+    if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+    workTimer=setInterval(function(){
+      workTxt.classList.add('swap');
+      setTimeout(function(){
+        workIdx=(workIdx+1)%WORK_PHRASES.length;
+        workTxt.textContent=WORK_PHRASES[workIdx];
+        workTxt.classList.remove('swap');
+      },260);
+    },2200);
+  }
+  function stopWork(){
+    if(workTimer){ clearInterval(workTimer); workTimer=null; }
+  }
+  new MutationObserver(function(){
+    if(typing.classList.contains('show')) startWork(); else stopWork();
+  }).observe(typing,{attributes:true,attributeFilter:['class']});
 
   // ---------- rich result cards ----------
   function el(tag,cls,text){
@@ -366,6 +464,20 @@ First, tap “Continue with Google” above. Then connect the services you want 
         card.appendChild(when); card.appendChild(main);
         wrap.appendChild(card);
       });
+    } else if(display.kind==='reminder'&&(display.items||[]).length){
+      display.items.forEach(function(r,i){
+        var card=el('div','card evt-card');
+        card.style.animationDelay=(i*60)+'ms';
+        var d=new Date(r.when);
+        var when=el('div','evt-when');
+        when.appendChild(el('b',null,isNaN(d)?'':String(d.getDate())));
+        when.appendChild(el('span',null,isNaN(d)?'':d.toLocaleDateString('en-GB',{month:'short'})));
+        var main=el('div','mail-main');
+        main.appendChild(el('div','evt-title','Reminder: '+r.title));
+        main.appendChild(el('div','evt-sub',fmtDate(r.when)+' · '+fmtTime(r.when)+(r.note?' · '+r.note:'')));
+        card.appendChild(when); card.appendChild(main);
+        wrap.appendChild(card);
+      });
     } else if(display.kind==='email'){
       var card=el('div','card doc-card');
       var head=el('div','doc-head');
@@ -405,16 +517,21 @@ First, tap “Continue with Google” above. Then connect the services you want 
 
   // ---------- in-site preview drawer ----------
   var drawer=document.getElementById('drawer'), drawerBack=document.getElementById('drawerBack');
-  var drawerTitle=document.getElementById('drawerTitle'), drawerOpen=document.getElementById('drawerOpen');
+  var drawerTitle=document.getElementById('drawerTitle'), drawerMeta=document.getElementById('drawerMeta');
+  var drawerIcon=document.getElementById('drawerIcon'), drawerOpen=document.getElementById('drawerOpen');
   var drawerBody=document.getElementById('drawerBody');
   function openPreview(f){
     if(!f||!/^[A-Za-z0-9_-]+$/.test(String(f.id||''))){ window.open(safeUrl(f&&f.url),'_blank','noopener'); return; }
+    var k=fileKind(f.mimeType);
+    drawerIcon.className='file-ic '+k.cls; drawerIcon.textContent=k.txt;
     drawerTitle.textContent=f.name||'Preview';
+    drawerMeta.textContent=k.label+' · Modified '+fmtDate(f.modifiedTime);
     drawerOpen.href=safeUrl(f.url);
-    drawerBody.innerHTML='';
+    drawerBody.innerHTML='<div class="drawer-loading"><div class="load-bar"></div></div>';
     var fr=document.createElement('iframe');
     fr.src='https://drive.google.com/file/d/'+f.id+'/preview';
     fr.setAttribute('allow','autoplay');
+    fr.addEventListener('load',function(){ var l=drawerBody.querySelector('.drawer-loading'); if(l)l.remove(); });
     drawerBody.appendChild(fr);
     drawer.classList.add('open'); drawerBack.classList.add('open');
   }
@@ -488,6 +605,75 @@ First, tap “Continue with Google” above. Then connect the services you want 
     }).catch(function(){});
   }
 
+  // ---------- reminders ----------
+  var remList=document.getElementById('remList');
+  var toastEl=document.getElementById('toast'), toastTimer=null;
+  function showToast(title,sub){
+    toastEl.innerHTML='';
+    toastEl.appendChild(el('b',null,title));
+    if(sub)toastEl.appendChild(el('span',null,sub));
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer=setTimeout(function(){ toastEl.classList.remove('show'); },6000);
+  }
+  toastEl.addEventListener('click',function(){ toastEl.classList.remove('show'); });
+  function relTime(iso){
+    var d=new Date(iso); if(isNaN(d))return '';
+    var mins=Math.round((d.getTime()-Date.now())/60000);
+    if(mins<1)return 'now';
+    if(mins<60)return 'in '+mins+' min';
+    var hrs=Math.floor(mins/60);
+    if(hrs<24)return 'in '+hrs+'h'+(mins%60?' '+(mins%60)+'m':'');
+    return 'in '+Math.floor(hrs/24)+'d';
+  }
+  function renderReminders(items){
+    remList.innerHTML='';
+    if(!items.length){
+      var li=document.createElement('li');
+      li.appendChild(el('span',null,'Nothing scheduled yet. Ask me to remind you about anything.'));
+      remList.appendChild(li); return;
+    }
+    items.forEach(function(r){
+      var li=document.createElement('li'); li.className='rem-item';
+      var txt=el('div','rem-txt');
+      txt.appendChild(el('b',null,r.title));
+      txt.appendChild(el('span',null,fmtDate(r.when)+' · '+fmtTime(r.when)+' ('+relTime(r.when)+')'));
+      var del=el('button','rem-del','×'); del.type='button'; del.title='Cancel reminder';
+      del.addEventListener('click',function(){
+        fetch('/api/reminders?id='+encodeURIComponent(r.id),{method:'DELETE'})
+          .then(function(){ loadReminders(); });
+      });
+      li.appendChild(txt); li.appendChild(del);
+      remList.appendChild(li);
+    });
+  }
+  function loadReminders(){
+    if(!signedIn)return;
+    fetch('/api/reminders').then(function(r){return r.json();}).then(function(data){
+      if(data.upcoming)renderReminders(data.upcoming);
+      (data.due||[]).forEach(function(r){
+        showToast('Reminder: '+r.title, r.note||('Due '+fmtTime(r.when)));
+        if('Notification' in window&&Notification.permission==='granted'){
+          try{ new Notification('Reminder: '+r.title,{body:r.note||'Wasipy reminder'}); }catch(e){}
+        }
+      });
+    }).catch(function(){});
+  }
+  document.getElementById('notifBtn').addEventListener('click',function(){
+    if(!('Notification' in window)){ showToast('Notifications are not supported in this browser.'); return; }
+    Notification.requestPermission().then(function(p){
+      showToast(p==='granted'?'Notifications enabled.':'Notifications not enabled.');
+    });
+  });
+  document.getElementById('emailRemBtn').addEventListener('click',function(){
+    var box=document.getElementById('cronBox');
+    if(box.classList.contains('show')){ box.classList.remove('show'); return; }
+    fetch('/api/cron/setup').then(function(r){return r.json();}).then(function(data){
+      if(data.cronUrl){ document.getElementById('cronUrl').value=data.cronUrl; box.classList.add('show'); }
+    }).catch(function(){});
+  });
+  document.getElementById('cronUrl').addEventListener('click',function(){ this.select(); });
+
   function loadHistory(){
     fetch('/api/chat').then(function(r){ if(!r.ok) return null; return r.json(); }).then(function(data){
       if(!data||!data.messages||!data.messages.length) return;
@@ -498,11 +684,36 @@ First, tap “Continue with Google” above. Then connect the services you want 
 
   function addConfirmCard(text, pending){
     var d=addMsg(text,'agent');
+    var extra=null, getDetails=null;
+    // Meetings: let the user add a description or guests on the card itself.
+    if(pending.tool==='create_calendar_event'){
+      extra=document.createElement('div');
+      var tog=el('button','details-toggle','+ Add description or guests (optional)');
+      tog.type='button';
+      var form=el('div','details-form');
+      form.appendChild(el('label',null,'Description'));
+      var ta=document.createElement('textarea'); ta.placeholder='What is this meeting about?';
+      form.appendChild(ta);
+      form.appendChild(el('label',null,'Guests (emails, comma separated)'));
+      var inp=document.createElement('input'); inp.type='text'; inp.placeholder='name@example.com, other@example.com';
+      form.appendChild(inp);
+      tog.addEventListener('click',function(){
+        form.classList.toggle('open');
+        tog.textContent=form.classList.contains('open')?'- Hide details':'+ Add description or guests (optional)';
+      });
+      extra.appendChild(tog); extra.appendChild(form);
+      d.appendChild(extra);
+      getDetails=function(){
+        return {
+          description:ta.value.trim(),
+          attendees:inp.value.split(',').map(function(s){return s.trim();}).filter(Boolean)
+        };
+      };
+    }
     var row=document.createElement('div'); row.className='confirm-row';
     var yes=document.createElement('button'); yes.type='button'; yes.className='yes'; yes.textContent='Yes, do it';
     var no=document.createElement('button'); no.type='button'; no.className='no'; no.textContent='No, cancel';
-    function answer(confirm){
-      row.remove();
+    function doConfirm(confirm){
       typing.classList.add('show');
       fetch('/api/actions/confirm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({actionId:pending.actionId,confirm:confirm})})
         .then(function(r){return r.json();})
@@ -512,6 +723,25 @@ First, tap “Continue with Google” above. Then connect the services you want 
           loadActivity();
         })
         .catch(function(){ typing.classList.remove('show'); addMsg('Something went wrong. Please try again.','agent'); });
+    }
+    function answer(confirm){
+      row.remove(); if(extra)extra.remove();
+      if(confirm&&getDetails){
+        var det=getDetails();
+        if(det.description||det.attendees.length){
+          typing.classList.add('show');
+          fetch('/api/actions/update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({actionId:pending.actionId,args:{description:det.description,attendees:det.attendees}})})
+            .then(function(r){return r.json();})
+            .then(function(u){
+              typing.classList.remove('show');
+              if(!u.ok){ addMsg(u.error||'Could not save the details. Please try again.','agent'); return; }
+              doConfirm(true);
+            })
+            .catch(function(){ typing.classList.remove('show'); addMsg('Something went wrong. Please try again.','agent'); });
+          return;
+        }
+      }
+      doConfirm(confirm);
     }
     yes.addEventListener('click',function(){ answer(true); });
     no.addEventListener('click',function(){ answer(false); });
@@ -535,7 +765,7 @@ First, tap “Continue with Google” above. Then connect the services you want 
         if(!w.ok){ addMsg(w.data.error||'Something went wrong. Please try again.','agent'); return; }
         if(w.data.pendingAction){ addConfirmCard(w.data.reply, w.data.pendingAction); }
         else { addMsg(w.data.reply,'agent',w.data.display||null); }
-        loadActivity();
+        loadActivity(); loadReminders();
       })
       .catch(function(){ typing.classList.remove('show'); sending=false; addMsg('Something went wrong. Please try again.','agent'); });
   }
@@ -600,7 +830,7 @@ First, tap “Continue with Google” above. Then connect the services you want 
   if(params.get('signin')==='required'){ addMsg('Please sign in with Google first.','agent'); }
   if(params.toString()){ window.history.replaceState({},'',window.location.pathname); }
 
-  loadMe().then(function(){ if(signedIn){ loadHistory(); loadActivity(); } if(justConnected) celebrateConnect(justConnected); });
+  loadMe().then(function(){ if(signedIn){ loadHistory(); loadActivity(); loadReminders(); setInterval(loadReminders,60000); } if(justConnected) celebrateConnect(justConnected); });
 })();
 </script>
 </body>

@@ -1,7 +1,10 @@
 // The AI agent's tools: what it can DO in the user's Google account.
 // Read tools run immediately. Write tools NEVER run from chat directly —
 // they create a pending action the user must confirm first (Yes/No).
+// Local tools (reminders) run immediately too — they only touch Wasipy's
+// own database, never the user's Google account.
 const { serviceClient, apiFor } = require('./google');
+const { getDb } = require('./mongo');
 
 const READ_TOOLS = [
   {
@@ -30,8 +33,16 @@ const READ_TOOLS = [
     },
   },
   {
+    name: 'list_recent_drive_files',
+    description: 'List the user\'s most recently modified Drive files. Use this whenever the user asks about recent files, latest files, or what is in Drive — never say you cannot list recent files.',
+    parameters: {
+      type: 'object',
+      properties: { count: { type: 'number', description: 'How many files (default 8, max 15)' } },
+    },
+  },
+  {
     name: 'search_drive_files',
-    description: 'Search Drive files by name or words in the name. To show recent files, search with a single common letter like "e" — results are newest first.',
+    description: 'Search Drive files by name or words in the name. Results are newest first.',
     parameters: {
       type: 'object',
       properties: { query: { type: 'string', description: 'Words to search for, e.g. "invoice"' } },
@@ -116,8 +127,39 @@ const WRITE_TOOLS = [
   },
 ];
 
-const ALL_TOOLS = [...READ_TOOLS, ...WRITE_TOOLS];
+const LOCAL_TOOLS = [
+  {
+    name: 'create_reminder',
+    description: 'Set a reminder for the user. Wasipy will notify them at that time (in the app, and by email if email reminders are enabled). Times must be ISO 8601 with the user\'s timezone offset.',
+    parameters: {
+      type: 'object',
+      properties: {
+        title: { type: 'string', description: 'What to remind about, e.g. "Call mom"' },
+        when: { type: 'string', description: 'When to remind, ISO 8601 with timezone offset, e.g. 2026-11-14T09:00:00+06:00' },
+        note: { type: 'string', description: 'Optional extra note' },
+      },
+      required: ['title', 'when'],
+    },
+  },
+  {
+    name: 'list_reminders',
+    description: 'List the user\'s upcoming reminders.',
+    parameters: { type: 'object', properties: {} },
+  },
+  {
+    name: 'cancel_reminder',
+    description: 'Cancel a reminder by its title (or part of it).',
+    parameters: {
+      type: 'object',
+      properties: { title: { type: 'string', description: 'Title or part of the title' } },
+      required: ['title'],
+    },
+  },
+];
+
+const ALL_TOOLS = [...READ_TOOLS, ...WRITE_TOOLS, ...LOCAL_TOOLS];
 const WRITE_TOOL_NAMES = new Set(WRITE_TOOLS.map((t) => t.name));
+const LOCAL_TOOL_NAMES = new Set(LOCAL_TOOLS.map((t) => t.name));
 
 function notConnected(service) {
   return `NOT_CONNECTED: The user's ${service} is not connected. Ask them to connect ${service} first (button on the right).`;
@@ -241,8 +283,38 @@ async function searchDriveFiles(userId, args) {
     url: f.webViewLink || '',
   }));
   return {
+    // NOTE: no URLs in the text — the model must never see raw links, or it
+    // pastes them into its reply. Links live only in the display payload,
+    // where the UI renders them as proper file cards.
     text: displayItems
-      .map((f) => `- ${f.name} | ${f.mimeType} | modified ${f.modifiedTime}${f.url ? ' | ' + f.url : ''}`)
+      .map((f) => `- ${f.name} | ${f.mimeType} | modified ${f.modifiedTime}`)
+      .join('\n'),
+    display: { kind: 'files', items: displayItems },
+  };
+}
+
+async function listRecentDriveFiles(userId, args) {
+  const drive = await requireClient(userId, 'drive');
+  if (!drive) return { text: notConnected('Drive'), display: null };
+  const count = Math.min(Math.max(Number(args.count) || 8, 1), 15);
+  const res = await drive.files.list({
+    q: 'trashed = false',
+    fields: 'files(id,name,mimeType,modifiedTime,webViewLink)',
+    orderBy: 'modifiedTime desc',
+    pageSize: count,
+  });
+  const files = res.data.files || [];
+  if (!files.length) return { text: 'No files found in Drive yet.', display: null };
+  const displayItems = files.map((f) => ({
+    id: f.id,
+    name: f.name,
+    mimeType: f.mimeType,
+    modifiedTime: f.modifiedTime,
+    url: f.webViewLink || '',
+  }));
+  return {
+    text: displayItems
+      .map((f) => `- ${f.name} | ${f.mimeType} | modified ${f.modifiedTime}`)
       .join('\n'),
     display: { kind: 'files', items: displayItems },
   };
@@ -304,6 +376,7 @@ const READ_EXECUTORS = {
   list_calendar_events: listCalendarEvents,
   list_recent_emails: listRecentEmails,
   read_email: readEmail,
+  list_recent_drive_files: listRecentDriveFiles,
   search_drive_files: searchDriveFiles,
   read_sheet: readSheet,
   read_doc: readDoc,
@@ -324,6 +397,89 @@ async function executeReadRich(userId, toolName, args) {
 async function executeRead(userId, toolName, args) {
   const out = await executeReadRich(userId, toolName, args);
   return out.text;
+}
+
+// ---------- local executors (reminders — Wasipy's own database) ----------
+
+async function createReminder(userId, args) {
+  const title = String(args.title || '').trim();
+  const when = new Date(args.when);
+  if (!title) return { text: 'I need a title for the reminder.', display: null };
+  if (isNaN(when)) {
+    return { text: `I couldn't understand the time "${args.when}". Please give a clear date and time.`, display: null };
+  }
+  if (when.getTime() <= Date.now()) {
+    return { text: 'That time is already past. Please pick a future time.', display: null };
+  }
+  const db = await getDb();
+  const doc = {
+    userId: String(userId),
+    title,
+    note: String(args.note || ''),
+    when,
+    status: 'pending',
+    createdAt: new Date(),
+  };
+  const r = await db.collection('reminders').insertOne(doc);
+  const item = { id: String(r.insertedId), title, when: when.toISOString(), note: doc.note };
+  return {
+    text: `Reminder set: "${title}" at ${when.toISOString()}.`,
+    display: { kind: 'reminder', items: [item] },
+  };
+}
+
+async function listReminders(userId) {
+  const db = await getDb();
+  const rows = await db
+    .collection('reminders')
+    .find({ userId: String(userId), status: 'pending', when: { $gte: new Date() } })
+    .sort({ when: 1 })
+    .limit(10)
+    .toArray();
+  if (!rows.length) return { text: 'No upcoming reminders.', display: null };
+  const items = rows.map((r) => ({
+    id: String(r._id),
+    title: r.title,
+    when: r.when.toISOString(),
+    note: r.note || '',
+  }));
+  return {
+    text: items.map((r) => `- "${r.title}" at ${r.when}`).join('\n'),
+    display: { kind: 'reminder', items },
+  };
+}
+
+async function cancelReminder(userId, args) {
+  const db = await getDb();
+  const q = String(args.title || '').trim();
+  if (!q) return { text: 'Which reminder should I cancel? Give me its title.', display: null };
+  const safe = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const row = await db
+    .collection('reminders')
+    .findOne(
+      { userId: String(userId), status: 'pending', title: { $regex: safe, $options: 'i' } },
+      { sort: { when: 1 } }
+    );
+  if (!row) return { text: `No upcoming reminder found matching "${q}".`, display: null };
+  await db.collection('reminders').updateOne({ _id: row._id }, { $set: { status: 'cancelled' } });
+  return { text: `Cancelled the reminder "${row.title}".`, display: null };
+}
+
+const LOCAL_EXECUTORS = {
+  create_reminder: createReminder,
+  list_reminders: listReminders,
+  cancel_reminder: cancelReminder,
+};
+
+async function executeLocal(userId, toolName, args) {
+  const fn = LOCAL_EXECUTORS[toolName];
+  if (!fn) return { text: `Unknown tool: ${toolName}`, display: null };
+  try {
+    return await fn(userId, args || {});
+  } catch (e) {
+    console.error(`local tool ${toolName} failed`, e);
+    return { text: `ERROR: ${toolName} failed: ${e.message}`, display: null };
+  }
 }
 
 // ---------- write executors (only called AFTER user confirms) ----------
@@ -439,9 +595,12 @@ module.exports = {
   ALL_TOOLS,
   READ_TOOLS,
   WRITE_TOOLS,
+  LOCAL_TOOLS,
   WRITE_TOOL_NAMES,
+  LOCAL_TOOL_NAMES,
   executeRead,
   executeReadRich,
+  executeLocal,
   executeWrite,
   summarizeWrite,
 };

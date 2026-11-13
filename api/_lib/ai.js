@@ -8,7 +8,7 @@ const crypto = require('node:crypto');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const OpenAI = require('openai');
 const { getDb, logActivity } = require('./mongo');
-const { ALL_TOOLS, WRITE_TOOL_NAMES, executeReadRich, summarizeWrite } = require('./tools');
+const { ALL_TOOLS, WRITE_TOOL_NAMES, LOCAL_TOOL_NAMES, executeReadRich, executeLocal, summarizeWrite } = require('./tools');
 
 const GEMINI_MODEL = process.env.AI_MODEL_GEMINI || 'gemini-2.5-flash';
 const OPENAI_MODEL = process.env.AI_MODEL_OPENAI || 'gpt-4o-mini';
@@ -18,6 +18,21 @@ function detectProvider() {
   if (process.env.GEMINI_API_KEY) return 'gemini';
   if (process.env.OPENAI_API_KEY) return 'openai';
   return null;
+}
+
+// Last line of defence against the model pasting raw links: the chat UI
+// shows rich cards instead, so links in reply text are only ugliness.
+// Strip markdown links (keep the label) and bare URLs from reply text,
+// and from old history fed back to the model (old turns with pasted
+// links teach the model to paste links too).
+function stripLinks(text) {
+  if (typeof text !== 'string') return text;
+  return text
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/https?:\/\/\S+/g, '')
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 }
 
 function systemPrompt({ today, timezone, connected }) {
@@ -48,6 +63,9 @@ function systemPrompt({ today, timezone, connected }) {
     '9. Do not use markdown formatting (no **bold**, no # headers) — the chat shows plain text, so markdown looks broken. Use simple plain lines.',
     '10. If the user asks you to try again after an error, ALWAYS call the tool again — never repeat an old error from the conversation history without retrying. Things the user fixes (like enabling an API) only show up if you retry.',
     '11. When you use a read tool, its results are ALSO shown to the user as rich cards below your reply — so keep your reply text short (one line) and do NOT paste long lists, raw links, or file URLs in your reply. Just say what you found in one line.',
+    '12. When the user asks to be reminded or notified about something, or to set a schedule, use create_reminder with an ISO 8601 time in their timezone. Use list_reminders to show upcoming reminders and cancel_reminder to cancel one by title.',
+    '12. For "recent files", "latest files", or "what is in my Drive", ALWAYS call list_recent_drive_files. You CAN list recent files — never say you cannot, and never ask the user for a keyword first. Never output a URL, a markdown link, or a numbered list of files in your reply text; the cards show the files.',
+    '13. Never use markdown link syntax like [name](url) and never paste https:// links into your reply. If you catch yourself writing a link, delete it — the card already shows it.',
   ].join('\n');
 }
 
@@ -90,6 +108,16 @@ async function createPendingAction(userId, toolName, args) {
   return { actionId, tool: toolName, summary: summarizeWrite(toolName, args) };
 }
 
+// The reply shown with a Yes/No card. For meetings, invite the user to add
+// a description or guests on the card itself.
+function pendingReply(pending) {
+  let reply = `Here's what I'll do:\n\n${pending.summary}\n\nShall I go ahead?`;
+  if (pending.tool === 'create_calendar_event') {
+    reply += '\n\nWant to add a description or guests? You can add them on the card below — or just press Yes to book it as is.';
+  }
+  return reply;
+}
+
 // ---------------- Gemini ----------------
 
 async function runGemini({ userId, userMessage, history, timezone, today, connectedServices }) {
@@ -112,7 +140,7 @@ async function runGemini({ userId, userMessage, history, timezone, today, connec
     .slice(-20)
     .map((m) => ({
       role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }],
+      parts: [{ text: stripLinks(m.content) }],
     }));
   const chat = model.startChat({ history: geminiHistory });
 
@@ -122,7 +150,7 @@ async function runGemini({ userId, userMessage, history, timezone, today, connec
     const calls = result.response.functionCalls() || [];
     if (!calls.length) {
       return {
-        reply: result.response.text() || "I couldn't come up with a reply. Could you rephrase that?",
+        reply: stripLinks(result.response.text()) || "I couldn't come up with a reply. Could you rephrase that?",
         display: lastDisplay,
       };
     }
@@ -131,11 +159,13 @@ async function runGemini({ userId, userMessage, history, timezone, today, connec
       if (WRITE_TOOL_NAMES.has(call.name)) {
         const pending = await createPendingAction(userId, call.name, call.args || {});
         return {
-          reply: `Here's what I'll do:\n\n${pending.summary}\n\nShall I go ahead?`,
+          reply: pendingReply(pending),
           pendingAction: pending,
         };
       }
-      const output = await executeReadRich(userId, call.name, call.args || {});
+      const output = LOCAL_TOOL_NAMES.has(call.name)
+        ? await executeLocal(userId, call.name, call.args || {})
+        : await executeReadRich(userId, call.name, call.args || {});
       if (output.display) lastDisplay = output.display;
       responses.push({
         functionResponse: { name: call.name, response: { result: String(output.text).slice(0, 8000) } },
@@ -154,7 +184,7 @@ async function runOpenAI({ userId, userMessage, history, timezone, today, connec
     { role: 'system', content: systemPrompt({ today, timezone, connected: connectedServices }) },
     ...(history || [])
       .slice(-20)
-      .map((m) => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content })),
+      .map((m) => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: stripLinks(m.content) })),
     { role: 'user', content: userMessage },
   ];
   const tools = ALL_TOOLS.map((t) => ({
@@ -175,18 +205,20 @@ async function runOpenAI({ userId, userMessage, history, timezone, today, connec
     messages.push(msg);
     const calls = msg.tool_calls || [];
     if (!calls.length) {
-      return { reply: msg.content || "I couldn't come up with a reply. Could you rephrase that?", display: lastDisplay };
+      return { reply: stripLinks(msg.content) || "I couldn't come up with a reply. Could you rephrase that?", display: lastDisplay };
     }
     for (const call of calls) {
       const args = JSON.parse(call.function.arguments || '{}');
       if (WRITE_TOOL_NAMES.has(call.function.name)) {
         const pending = await createPendingAction(userId, call.function.name, args);
         return {
-          reply: `Here's what I'll do:\n\n${pending.summary}\n\nShall I go ahead?`,
+          reply: pendingReply(pending),
           pendingAction: pending,
         };
       }
-      const output = await executeReadRich(userId, call.function.name, args);
+      const output = LOCAL_TOOL_NAMES.has(call.function.name)
+        ? await executeLocal(userId, call.function.name, args)
+        : await executeReadRich(userId, call.function.name, args);
       if (output.display) lastDisplay = output.display;
       messages.push({
         role: 'tool',
