@@ -1,3 +1,4 @@
+// NOTE: this file is NOT deployed as its own function. Vercel Hobby allows max 12 serverless functions and we have more, so this endpoint is served by api/router.js (see vercel.json rewrites) and this copy is excluded from deploys via .vercelignore. Edit api/_lib/routes/<name>.js instead.
 // POST /api/auth/desktop/exchange — desktop app only.
 // Called by the app after Google redirects back to its loopback address with
 // an authorization code. Verifies the signed state, exchanges the code for

@@ -1,3 +1,4 @@
+// NOTE: this file is NOT deployed as its own function. Vercel Hobby allows max 12 serverless functions and we have more, so this endpoint is served by api/router.js (see vercel.json rewrites) and this copy is excluded from deploys via .vercelignore. Edit api/_lib/routes/<name>.js instead.
 // POST /api/actions/update — edit a still-pending write action before the
 // user answers it (e.g. add a description or guests to a meeting on the
 // Yes/No card). Only whitelisted fields per tool, only the action's owner,

@@ -1,0 +1,9 @@
+# These endpoints are served by api/router.js (see vercel.json rewrites).
+# Excluding them keeps the deployment at 11 serverless functions, under
+# the Vercel Hobby plan limit of 12. Edit api/_lib/routes/<name>.js instead.
+/api/reminders.js
+/api/cron/reminders.js
+/api/cron/setup.js
+/api/actions/update.js
+/api/auth/desktop/url.js
+/api/auth/desktop/exchange.js

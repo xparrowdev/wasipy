@@ -1,3 +1,4 @@
+// NOTE: this file is NOT deployed as its own function. Vercel Hobby allows max 12 serverless functions and we have more, so this endpoint is served by api/router.js (see vercel.json rewrites) and this copy is excluded from deploys via .vercelignore. Edit api/_lib/routes/<name>.js instead.
 // GET /api/cron/setup — signed-in users only. Returns this user's personal
 // cron URL for email reminders: paste it into a free scheduler
 // (e.g. cron-job.org) set to every 5 minutes, and due reminders arrive by

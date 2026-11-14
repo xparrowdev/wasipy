@@ -1,3 +1,4 @@
+// NOTE: this file is NOT deployed as its own function. Vercel Hobby allows max 12 serverless functions and we have more, so this endpoint is served by api/router.js (see vercel.json rewrites) and this copy is excluded from deploys via .vercelignore. Edit api/_lib/routes/<name>.js instead.
 // POST /api/auth/desktop/url — desktop app only.
 // Returns the Google sign-in URL for the DESKTOP flow: the app opens it in
 // the user's real browser (Chrome) instead of inside the app window, and

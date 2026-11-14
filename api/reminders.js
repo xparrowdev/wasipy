@@ -1,3 +1,4 @@
+// NOTE: this file is NOT deployed as its own function. Vercel Hobby allows max 12 serverless functions and we have more, so this endpoint is served by api/router.js (see vercel.json rewrites) and this copy is excluded from deploys via .vercelignore. Edit api/_lib/routes/<name>.js instead.
 // /api/reminders — the signed-in user's reminders.
 // GET    — { upcoming: [...], due: [...] }. Reminders in `due` are marked
 //          notified on return, so each one alerts once in the app.
