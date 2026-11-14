@@ -41,16 +41,19 @@ function redirectUri() {
   );
 }
 
-function oauthClient() {
+// `redirect` overrides the web callback. The desktop app passes its own
+// loopback redirect (http://127.0.0.1:8765/auth/callback) so Google sign-in
+// can happen in the user's real browser instead of inside the app window.
+function oauthClient(redirect) {
   return new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
-    redirectUri()
+    redirect || redirectUri()
   );
 }
 
-function authUrl({ action, service, state }) {
-  const client = oauthClient();
+function authUrl({ action, service, state, redirectUri: redirect }) {
+  const client = oauthClient(redirect);
   const scopes = action === 'connect' ? SERVICES[service].scopes : LOGIN_SCOPES;
   return client.generateAuthUrl({
     access_type: 'offline', // ask Google for a refresh token we can reuse
@@ -61,8 +64,8 @@ function authUrl({ action, service, state }) {
   });
 }
 
-async function exchangeCode(code) {
-  const client = oauthClient();
+async function exchangeCode(code, redirect) {
+  const client = oauthClient(redirect);
   const { tokens } = await client.getToken(code);
   return tokens;
 }

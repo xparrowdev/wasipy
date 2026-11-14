@@ -16,6 +16,14 @@ app changes too, with no reinstall. The shell adds:
   Windows Settings > Apps > Startup).
 - **Offline page** — a friendly retry screen when there is no internet.
 - **External links** open in your default browser.
+- **Google sign-in opens in your default browser (Chrome)** — signing in or
+  connecting a service never happens inside the app window. The app listens
+  on a loopback address (`http://127.0.0.1:8765/auth/callback`) for
+  Google's redirect back, then finishes the sign-in with the server
+  (`/api/auth/desktop/*`) and saves the session in the app. That loopback
+  address must be registered as an Authorized redirect URI on the Wasipy
+  OAuth client in Google Cloud (the port must match exactly — Web clients
+  match the redirect URI including the port).
 
 ## Download
 
@@ -24,7 +32,7 @@ automatically (GitHub Actions, Windows runner). Get it here:
 
 **https://github.com/xparrowdev/wasipy/releases/tag/desktop-latest**
 
-Download `Wasipy-Setup-1.0.0-x64.exe`, run it, sign in with Google once —
+Download `Wasipy-Setup-*-x64.exe`, run it, sign in with Google once —
 done. Your reminders and Google connections are the same as on the website.
 
 ## Run it locally (for development)

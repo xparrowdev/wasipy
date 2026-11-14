@@ -23,6 +23,15 @@ function cookieAttrs(maxAgeSeconds) {
 }
 
 function createSession(res, user) {
+  const { value, maxAge } = buildSessionValue(user);
+  res.setHeader('Set-Cookie', `${COOKIE_NAME}=${value}; ${cookieAttrs(maxAge)}`);
+  return parseSessionValue(value);
+}
+
+// Build the signed session value without touching the response. The desktop
+// app needs the raw value: after a Chrome sign-in it sets the cookie in its
+// own session itself.
+function buildSessionValue(user) {
   const payload = {
     userId: String(user._id),
     email: user.email,
@@ -30,19 +39,22 @@ function createSession(res, user) {
     exp: Math.floor(Date.now() / 1000) + SESSION_DAYS * 24 * 3600,
   };
   const data = b64urlJson(payload);
-  const value = `${data}.${sign(data)}`;
-  res.setHeader('Set-Cookie', `${COOKIE_NAME}=${value}; ${cookieAttrs(SESSION_DAYS * 24 * 3600)}`);
-  return payload;
+  return { value: `${data}.${sign(data)}`, maxAge: SESSION_DAYS * 24 * 3600 };
 }
 
 function getSession(req) {
+  const raw = parseCookies(req)[COOKIE_NAME];
+  return parseSessionValue(raw);
+}
+
+// Validate a raw signed session value (from a cookie or from a request body).
+function parseSessionValue(raw) {
   try {
-    const raw = parseCookies(req)[COOKIE_NAME];
     if (!raw) return null;
-    const dot = raw.lastIndexOf('.');
+    const dot = String(raw).lastIndexOf('.');
     if (dot === -1) return null;
-    const data = raw.slice(0, dot);
-    const sig = raw.slice(dot + 1);
+    const data = String(raw).slice(0, dot);
+    const sig = String(raw).slice(dot + 1);
     if (!verify(data, sig)) return null;
     const payload = parseB64urlJson(data);
     if (!payload.exp || payload.exp < Math.floor(Date.now() / 1000)) return null;
@@ -57,4 +69,13 @@ function clearSession(res) {
   res.setHeader('Set-Cookie', `${COOKIE_NAME}=; ${cookieAttrs(0)}`);
 }
 
-module.exports = { createSession, getSession, clearSession, parseCookies };
+module.exports = {
+  createSession,
+  getSession,
+  clearSession,
+  parseCookies,
+  buildSessionValue,
+  parseSessionValue,
+  COOKIE_NAME,
+  SESSION_DAYS,
+};
