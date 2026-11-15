@@ -17,6 +17,8 @@ const routes = {
   'actions-update': require('./_lib/routes/actions-update'),
   'desktop-url': require('./_lib/routes/desktop-url'),
   'desktop-exchange': require('./_lib/routes/desktop-exchange'),
+  'mobile-url': require('./_lib/routes/mobile-url'),
+  'mobile-exchange': require('./_lib/routes/mobile-exchange'),
 };
 
 module.exports = async (req, res) => {

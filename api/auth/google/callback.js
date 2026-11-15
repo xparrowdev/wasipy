@@ -33,6 +33,13 @@ module.exports = async (req, res) => {
     return fail(res, 'Invalid sign-in state. Please try again.');
   }
 
+  // Mobile app flow: hand the code back to the app through its deep link.
+  // The app exchanges the code itself (see /api/auth/mobile/exchange).
+  if (stateObj.platform === 'mobile') {
+    res.writeHead(302, { Location: `wasipy://auth/callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}` });
+    return res.end();
+  }
+
   let tokens;
   try {
     tokens = await exchangeCode(code);

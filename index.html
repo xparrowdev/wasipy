@@ -176,6 +176,23 @@ body.chatting .steps{max-height:0;opacity:0;margin-top:0;margin-bottom:0}
 .cron-box p{font-size:12.5px;color:var(--mute);margin:0 0 6px;line-height:1.5}
 .cron-box input{width:100%;font-size:11.5px;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
 .fine-note{font-size:12.5px;color:var(--faint);text-align:center;padding:26px 10px 0}
+html{scroll-behavior:smooth}
+
+/* Download section */
+.dl-link{font:600 13.5px Inter;color:var(--ink);text-decoration:none;padding:8px 12px;border-radius:999px;white-space:nowrap}
+.dl-link:hover{background:var(--bg)}
+.dl{margin-top:14px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:0 1px 2px #14151a0a,0 12px 28px #14151a08;animation:up .8s cubic-bezier(.2,.8,.2,1) .2s backwards}
+.dl h3{margin:0 0 4px;font:700 16px Manrope;letter-spacing:-.01em;color:var(--ink)}
+.dl>p{margin:0 0 8px;font-size:13px;color:var(--mute)}
+.dl-row{display:flex;align-items:center;gap:14px;padding:12px 6px;border-top:1px solid #efede6}
+.dl-ic{flex:none;width:40px;height:40px;border-radius:12px;background:var(--bg);display:grid;place-items:center;color:var(--ink)}
+.dl-ic svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.dl-row b{display:block;font:600 14px Inter;color:var(--ink)}
+.dl-row span{font-size:12.5px;color:var(--mute)}
+.dl-row a{margin-left:auto;flex:none;text-decoration:none;padding:9px 16px;border-radius:999px;background:var(--btn);color:var(--btn-ink);font:600 13px Inter;transition:transform .2s var(--ease)}
+.dl-row a:hover{transform:translateY(-1px)}
+.dl-row a.dis{background:#e9e8e1;color:var(--mute);pointer-events:none}
+.dl-note{margin:14px 0 0;font-size:12px;color:var(--faint);line-height:1.5}
 
 /* Chat log — hidden until a real conversation exists */
 .chat-log{display:none;flex-direction:column;gap:22px;padding:26px 0 6px;min-height:120px}
@@ -291,6 +308,7 @@ body.chatting .chat-log{display:flex}
   <header class="top">
     <div class="wm"><div class="lg"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6l4 12 5-9 5 9 4-12"></path></svg></div>Wasipy</div>
     <div class="rt">
+      <a class="dl-link" href="#download">Download</a>
       <span class="pill" id="statusPill"><i></i>Not connected</span>
       <button class="btn" id="connectBtn" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="4" aria-hidden="true"><circle cx="12" cy="12" r="8" stroke="#4285f4" stroke-dasharray="12.5 37.8" stroke-dashoffset="0"></circle><circle cx="12" cy="12" r="8" stroke="#34a853" stroke-dasharray="12.5 37.8" stroke-dashoffset="-12.6"></circle><circle cx="12" cy="12" r="8" stroke="#fbbc05" stroke-dasharray="12.5 37.8" stroke-dashoffset="-25.1"></circle><circle cx="12" cy="12" r="8" stroke="#ea4335" stroke-dasharray="12.5 37.8" stroke-dashoffset="-37.7"></circle></svg>Continue with Google</button>
       <button class="btn-quiet" id="disconnectBtn" type="button" style="display:none">Sign out</button>
@@ -343,6 +361,22 @@ body.chatting .chat-log{display:flex}
     </div>
   </div>
 
+  <section class="dl" id="download">
+    <h3>Download Wasipy</h3>
+    <p>Use Wasipy as an app on your computer or phone. It always opens the latest version.</p>
+    <div class="dl-row">
+      <div class="dl-ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1"></rect><rect x="13" y="3" width="8" height="8" rx="1"></rect><rect x="3" y="13" width="8" height="8" rx="1"></rect><rect x="13" y="13" width="8" height="8" rx="1"></rect></svg></div>
+      <div><b>Windows</b><span>64-bit · Setup 1.0.1 · 84 MB</span></div>
+      <a href="https://github.com/xparrowdev/wasipy/releases/download/desktop-latest/Wasipy-Setup-1.0.1-x64.exe">Download</a>
+    </div>
+    <div class="dl-row">
+      <div class="dl-ic"><svg viewBox="0 0 24 24"><path d="M7 10h10v8a2 2 0 01-2 2H9a2 2 0 01-2-2z"></path><path d="M7 10a5 5 0 0110 0"></path><path d="M9.5 4.5L10.5 6M14.5 4.5L13.5 6"></path><circle cx="10" cy="13" r=".9" fill="currentColor" stroke="none"></circle><circle cx="14" cy="13" r=".9" fill="currentColor" stroke="none"></circle></svg></div>
+      <div><b>Android</b><span>APK 1.0.0</span></div>
+      <a class="dis" id="apkBtn" href="#">Building…</a>
+    </div>
+    <p class="dl-note">Windows may show a SmartScreen warning because the app is not signed yet — choose “More info” → “Run anyway”. On Android, allow “Install unknown apps” when asked.</p>
+  </section>
+
   <p class="fine-note">Wasipy works only in the Google account you connect. Your data is never shared with other users.</p>
 
 </div></div>
@@ -372,6 +406,50 @@ body.chatting .chat-log{display:flex}
   var form=document.getElementById('chatForm'), input=document.getElementById('chatInput');
   var connectBtn=document.getElementById('connectBtn'), disconnectBtn=document.getElementById('disconnectBtn');
   var newChatBtn=document.getElementById('newChatBtn');
+
+  // ---------- Android app (Capacitor) sign-in ----------
+  // Inside the Android app the page runs in a WebView, and Google blocks
+  // sign-in inside embedded browsers. So the app opens Google in a real
+  // browser tab (Chrome Custom Tab) and Google hands the result back to
+  // the app through a deep link (wasipy://auth/callback).
+  var isCapacitor = typeof window.Capacitor !== 'undefined' && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
+  function capPlugins(){ return (window.Capacitor && window.Capacitor.Plugins) || {}; }
+  function mobileAuth(action, service){
+    var plugins = capPlugins();
+    if(!plugins.Browser){ window.location.href='/api/auth/google?action='+action+(service?'&service='+encodeURIComponent(service):''); return; }
+    fetch('/api/auth/mobile/url',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:action,service:service||undefined})})
+      .then(function(r){return r.json();})
+      .then(function(d){
+        if(d && d.ok && d.url){ plugins.Browser.open({url:d.url}); }
+        else { addMsg((d&&d.error)||'Could not start the Google sign-in. Please try again.','agent'); }
+      })
+      .catch(function(){ addMsg('Could not reach Wasipy. Check your internet and try again.','agent'); });
+  }
+  if(isCapacitor){
+    var AppPlugin = capPlugins().App;
+    if(AppPlugin && AppPlugin.addListener){
+      AppPlugin.addListener('appUrlOpen',function(ev){
+        var u;
+        try{ u=new URL(ev.url); }catch(e){ return; }
+        if(u.protocol!=='wasipy:'||u.host!=='auth') return;
+        var code=u.searchParams.get('code'), state=u.searchParams.get('state');
+        if(!code||!state) return;
+        fetch('/api/auth/mobile/exchange',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:code,state:state})})
+          .then(function(r){return r.json();})
+          .then(function(d){
+            var B=capPlugins().Browser; if(B&&B.close){ try{ B.close(); }catch(e){} }
+            if(!d||!d.ok){ addMsg((d&&d.error)||'Could not finish the sign-in. Please try again.','agent'); return; }
+            if(d.action==='login'&&d.sessionToken){
+              document.cookie=(d.cookieName||'wasipy_session')+'='+d.sessionToken+'; path=/; max-age='+(d.maxAge||2592000)+'; Secure; SameSite=Lax';
+              window.location.href='/';
+            } else if(d.action==='connect'&&d.service){
+              window.location.href='/?connected='+encodeURIComponent(d.service);
+            }
+          })
+          .catch(function(){ addMsg('Could not finish the sign-in. Please try again.','agent'); });
+      });
+    }
+  }
   var statusPill=document.getElementById('statusPill'), stepsEl=document.getElementById('steps');
   var appsGrid=document.getElementById('appsGrid');
   var signedIn=false, sending=false;
@@ -668,6 +746,7 @@ body.chatting .chat-log{display:flex}
         .then(function(){ loadMe(); loadActivity(); addLog('Disconnected '+svc); })
         .catch(function(){ b.disabled=false; addMsg('Could not disconnect '+svc+'. Please try again.','agent'); });
     } else {
+      if(isCapacitor){ mobileAuth('connect',svc); return; }
       window.location.href='/api/auth/google?action=connect&service='+encodeURIComponent(svc);
     }
   });
@@ -882,6 +961,7 @@ body.chatting .chat-log{display:flex}
   }
 
   connectBtn.addEventListener('click',function(){
+    if(isCapacitor){ mobileAuth('login'); return; }
     window.location.href='/api/auth/google?action=login';
   });
 
