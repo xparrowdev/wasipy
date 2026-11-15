@@ -8,43 +8,55 @@
 <title>Wasipy</title>
 <style>
 :root{
-  --bg:#fdfdfc; --bg-soft:rgba(253,253,252,.85); --rail:#f6f5f2; --ink:#141412; --muted:#6f6d66; --faint:#a3a099;
-  --line:#e8e6e0; --bubble:#f1f0eb; --hover:#eceae4; --btn:#141412; --btn-ink:#ffffff;
-  --green:#1a7f37; --amber:#9a6700; --red:#b42318;
-  --brand:#4f46e5; --brand-grad:linear-gradient(135deg,#4f46e5,#7c3aed 55%,#2563eb);
-  --shadow:0 8px 30px rgba(0,0,0,.08),0 2px 6px rgba(0,0,0,.05);
+  --bg:#fafaf8; --bg-soft:rgba(250,250,248,.85); --rail:#f2f1ed; --ink:#17171a; --muted:#6e6d68; --faint:#a6a39c;
+  --line:#e9e7e1; --bubble:#f0eee8; --hover:#ebe9e2; --btn:#17171a; --btn-ink:#ffffff;
+  --green:#178a3c; --amber:#9a6700; --red:#c0271b;
+  --brand:#4f46e5; --brand-grad:linear-gradient(135deg,#6366f1,#8b5cf6 50%,#3b82f6);
+  --shadow:0 12px 32px rgba(20,20,25,.08),0 2px 6px rgba(20,20,25,.05);
+  --ease:cubic-bezier(.22,1,.36,1); --orb-glow:0 0 0 1px rgba(99,102,241,.25),0 8px 32px rgba(99,102,241,.35);
 }
 @media (prefers-color-scheme: dark){
   :root{
-    --bg:#101013; --bg-soft:rgba(16,16,19,.85); --rail:#191920; --ink:#f0f0f2; --muted:#a8a8b0; --faint:#7c7c86;
-    --line:#2a2a31; --bubble:#232329; --hover:#22222a; --btn:#f0f0f2; --btn-ink:#101013;
-    --green:#4ac26b; --amber:#e3b341; --red:#ff8a7a;
-    --brand:#818cf8; --brand-grad:linear-gradient(135deg,#6366f1,#8b5cf6 55%,#3b82f6);
-    --shadow:0 8px 30px rgba(0,0,0,.5),0 2px 6px rgba(0,0,0,.4);
+    --bg:#0a0c0f; --bg-soft:rgba(10,12,15,.82); --rail:#12151a; --ink:#f2f3f5; --muted:#9ba1a8; --faint:#6b7178;
+    --line:rgba(255,255,255,.08); --bubble:#1b1f26; --hover:#1e232b; --btn:#f2f3f5; --btn-ink:#0a0c0f;
+    --green:#3ecf6e; --amber:#e8b93e; --red:#ff8a7a;
+    --brand:#8b8cf8; --brand-grad:linear-gradient(135deg,#6366f1,#8b5cf6 50%,#3b82f6);
+    --shadow:0 12px 40px rgba(0,0,0,.45),0 2px 8px rgba(0,0,0,.3);
+    --orb-glow:0 0 0 1px rgba(139,140,248,.3),0 8px 40px rgba(99,102,241,.45);
   }
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased}
+body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 button{font-family:inherit}
 h1,h2,h3{margin:0;font-weight:600}
 
+/* Brand orb — the Wasipy mark. Gradient sphere with a soft breathing glow. */
+.orb{background:var(--brand-grad);border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:700;box-shadow:var(--orb-glow);flex:none;position:relative;overflow:hidden}
+.orb::before{content:'';position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.45),transparent 55%)}
+.orb span{position:relative;z-index:1}
+.orb-mini{width:24px;height:24px;font-size:13px}
+.orb-hero{width:64px;height:64px;font-size:30px;margin:0 auto;animation:orbFloat 6s ease-in-out infinite}
+@keyframes orbFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+
 /* Top bar */
-.topbar{position:sticky;top:0;z-index:20;background:var(--bg-soft);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
-.topbar-in{max-width:1120px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
-.topbar .title{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px;white-space:nowrap}
-.topbar .title .chev{color:var(--faint);font-size:13px;font-weight:400}
+.topbar{position:sticky;top:0;z-index:20;background:var(--bg-soft);backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2);border-bottom:1px solid var(--line)}
+.topbar-in{max-width:1120px;margin:0 auto;padding:11px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.topbar .title{font-size:16px;font-weight:650;letter-spacing:-.01em;display:flex;align-items:center;gap:9px;white-space:nowrap}
 .topbar .right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
 .status{font-size:13px;color:var(--muted);display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
-.status i{width:8px;height:8px;border-radius:50%;background:var(--amber);flex:none}
-.status.on i{background:var(--green)}
-.btn-g{background:var(--bg);color:var(--ink);border:1px solid var(--line);display:inline-flex;align-items:center;gap:9px;border-radius:999px;padding:8px 16px;font-weight:600;font-size:14px;cursor:pointer;transition:background .15s}
-.btn-g:hover{background:var(--hover)}
+.status i{width:8px;height:8px;border-radius:50%;background:var(--amber);flex:none;transition:background .3s}
+.status.on i{background:var(--green);box-shadow:0 0 0 3px rgba(62,207,110,.18)}
+.btn-g{background:var(--bg);color:var(--ink);border:1px solid var(--line);display:inline-flex;align-items:center;gap:9px;border-radius:999px;padding:8px 16px;font-weight:600;font-size:14px;cursor:pointer;transition:background .2s var(--ease),transform .2s var(--ease),box-shadow .2s var(--ease)}
+.btn-g:hover{background:var(--hover);transform:translateY(-1px)}
+.btn-g:active{transform:scale(.97)}
 .btn-g .g{font-weight:800;font-size:16px;background:conic-gradient(from 0deg,#ea4335 0 25%,#fbbc05 0 50%,#34a853 0 75%,#4285f4 0);-webkit-background-clip:text;background-clip:text;color:transparent}
-.btn-disconnect{background:transparent;color:var(--red);border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-weight:600;font-size:13.5px;cursor:pointer}
-.btn-disconnect:hover{background:var(--hover)}
-.btn-quiet{background:transparent;color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-weight:600;font-size:13.5px;cursor:pointer}
-.btn-quiet:hover{background:var(--hover)}
+.btn-disconnect{background:transparent;color:var(--red);border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-weight:600;font-size:13.5px;cursor:pointer;transition:background .2s var(--ease),transform .2s var(--ease)}
+.btn-disconnect:hover{background:var(--hover);transform:translateY(-1px)}
+.btn-disconnect:active{transform:scale(.97)}
+.btn-quiet{background:transparent;color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-weight:600;font-size:13.5px;cursor:pointer;transition:background .2s var(--ease),transform .2s var(--ease)}
+.btn-quiet:hover{background:var(--hover);transform:translateY(-1px)}
+.btn-quiet:active{transform:scale(.97)}
 
 /* Layout */
 .layout{max-width:1120px;margin:0 auto;padding:28px 20px 40px;display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:36px;align-items:start}
@@ -52,35 +64,36 @@ h1,h2,h3{margin:0;font-weight:600}
 
 /* Chat column */
 .chat-col{min-width:0;max-width:768px;width:100%;margin:0 auto}
-.greeting{text-align:center;padding:26px 0 8px}
-.greeting h1{font-size:clamp(26px,3.4vw,32px);font-weight:600;letter-spacing:-.01em}
-.greeting p{color:var(--muted);font-size:15.5px;margin:10px auto 0;max-width:520px}
+.greeting{text-align:center;padding:30px 0 6px;max-height:340px;overflow:hidden;transition:max-height .5s var(--ease),opacity .35s ease,transform .5s var(--ease),padding .5s var(--ease);animation:fadeRise .6s var(--ease) both}
+.greeting.hidden{max-height:0;opacity:0;transform:translateY(-10px);padding-top:0;padding-bottom:0}
+@keyframes fadeRise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.greeting h1{font-size:clamp(27px,3.4vw,34px);font-weight:650;letter-spacing:-.02em;margin-top:18px}
+.greeting p{color:var(--muted);font-size:15.5px;margin:10px auto 0;max-width:520px;line-height:1.55}
 .chat-log{display:flex;flex-direction:column;gap:22px;padding:26px 0 6px;min-height:160px}
-.msg{font-size:15.5px;white-space:pre-wrap;word-wrap:break-word;animation:msgIn .25s ease}
-@keyframes msgIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
-.msg.user{align-self:flex-end;background:var(--bubble);border-radius:20px;padding:10px 16px;max-width:80%}
+.msg{font-size:15.5px;white-space:pre-wrap;word-wrap:break-word;animation:msgIn .4s var(--ease) both}
+@keyframes msgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.msg.user{align-self:flex-end;background:var(--bubble);border-radius:20px;padding:10px 16px;max-width:80%;box-shadow:0 1px 2px rgba(0,0,0,.04)}
 .msg.agent{align-self:flex-start;max-width:100%;padding:2px 0}
 .confirm-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
-.confirm-row button{border:0;cursor:pointer;font-weight:600;font-size:14px;padding:8px 16px;border-radius:999px}
+.confirm-row button{border:0;cursor:pointer;font-weight:600;font-size:14px;padding:8px 16px;border-radius:999px;transition:transform .2s var(--ease),opacity .2s}
+.confirm-row button:hover{transform:translateY(-1px)}
+.confirm-row button:active{transform:scale(.97)}
 .confirm-row .yes{background:var(--btn);color:var(--btn-ink)}
 .confirm-row .no{background:transparent;color:var(--ink);border:1px solid var(--line)}
 .typing{display:none;padding:4px 0}
 .typing.show{display:block}
-.work-pill{display:inline-flex;align-items:center;gap:9px;background:var(--bubble);border-radius:999px;padding:9px 15px;position:relative;overflow:hidden}
-.work-dot{width:8px;height:8px;border-radius:50%;background:conic-gradient(from 0deg,#4285f4,#34a853,#fbbc05,#ea4335,#4285f4);animation:orbSpin 1.4s linear infinite;flex:none}
+.work-pill{display:inline-flex;align-items:center;gap:10px;background:var(--bubble);border-radius:999px;padding:9px 16px 9px 13px;animation:msgIn .3s var(--ease) both}
+.work-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--line);border-top-color:var(--brand);animation:orbSpin .8s linear infinite;flex:none}
 @keyframes orbSpin{to{transform:rotate(360deg)}}
 .work-txt{font-size:13.5px;color:var(--muted);transition:opacity .25s ease;white-space:nowrap}
 .work-txt.swap{opacity:0}
-.work-bar{position:absolute;left:0;right:0;bottom:0;height:2px;background:transparent;overflow:hidden}
-.work-bar::after{content:'';position:absolute;top:0;height:100%;width:35%;border-radius:2px;background:linear-gradient(90deg,transparent,#4285f4,#34a853,transparent);animation:workSlide 1.5s ease-in-out infinite}
-@keyframes workSlide{0%{left:-35%}100%{left:100%}}
 
 /* Rich result cards */
 .cards{display:flex;flex-direction:column;gap:8px;margin-top:12px}
-.card{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:12px 14px;animation:cardIn .3s ease both;transition:transform .15s ease,box-shadow .15s ease,border-color .15s}
-@keyframes cardIn{from{opacity:0;transform:translateY(8px) scale(.99)}to{opacity:1;transform:none}}
+.card{background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:13px 15px;animation:cardIn .45s var(--ease) both;transition:transform .25s var(--ease),box-shadow .25s var(--ease),border-color .25s}
+@keyframes cardIn{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:none}}
 .card.click{cursor:pointer}
-.card.click:hover{transform:translateY(-1px);box-shadow:var(--shadow);border-color:var(--faint)}
+.card.click:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:var(--faint)}
 .file-card{display:flex;align-items:center;gap:12px}
 .file-ic{flex:none;width:38px;height:38px;border-radius:10px;display:grid;place-items:center;font-size:12px;font-weight:700;color:#fff}
 .file-ic.doc{background:#4285f4}.file-ic.sheet{background:#0f9d58}.file-ic.slides{background:#f4b400;color:#5b4300}.file-ic.pdf{background:#db4437}.file-ic.img{background:#7c4dff}.file-ic.folder{background:#5f6368}.file-ic.file{background:#9aa0a6}
@@ -109,46 +122,39 @@ h1,h2,h3{margin:0;font-weight:600}
 .doc-head{margin-bottom:8px}
 .doc-head .mail-from{white-space:normal}
 
-/* Suggestion cards */
-.suggest{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 0 4px}
-@media(max-width:560px){.suggest{grid-template-columns:1fr}}
-.sug-card{position:relative;overflow:hidden;text-align:left;background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:13px 15px;cursor:pointer;transition:background .15s,border-color .15s,transform .15s ease,box-shadow .15s ease;color:var(--ink)}
-.sug-card:hover{background:var(--rail);transform:translateY(-2px);box-shadow:var(--shadow)}
-.sug-card::after{content:'';position:absolute;top:0;left:-80%;width:50%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.35),transparent);transform:skewX(-20deg);transition:left .5s ease;pointer-events:none}
-.sug-card:hover::after{left:130%}
-.sug-card b{display:block;font-size:14.5px;font-weight:600}
-.sug-card span{display:block;color:var(--muted);font-size:13.5px;margin-top:1px}
-
 /* Composer */
-.composer{position:sticky;bottom:14px;margin-top:16px;background:var(--bg);border:1px solid var(--line);border-radius:26px;box-shadow:var(--shadow);display:flex;align-items:center;gap:8px;padding:8px 8px 8px 20px}
+.composer{position:sticky;bottom:14px;margin-top:20px;background:var(--bg);border:1px solid var(--line);border-radius:28px;box-shadow:var(--shadow);display:flex;align-items:center;gap:8px;padding:9px 9px 9px 22px;transition:border-color .25s var(--ease),box-shadow .25s var(--ease);animation:fadeRise .6s .1s var(--ease) both}
+.composer:focus-within{border-color:rgba(99,102,241,.55);box-shadow:var(--shadow),0 0 0 4px rgba(99,102,241,.14)}
 .composer input{flex:1;border:0;background:transparent;font-family:inherit;font-size:15.5px;color:var(--ink);min-width:0;padding:8px 0}
 .composer input:focus{outline:none}
 .composer input::placeholder{color:var(--faint)}
-.send{flex:none;width:36px;height:36px;border-radius:50%;border:0;background:var(--brand-grad);color:#fff;font-size:16px;cursor:pointer;display:grid;place-items:center;line-height:1;transition:transform .12s ease,opacity .15s;box-shadow:0 2px 10px rgba(79,70,229,.35)}
-.send:hover{opacity:.9}
-.send:active{transform:scale(.9)}
-.demo-note{font-size:12.5px;color:var(--faint);text-align:center;padding:10px 10px 0}
+.send{flex:none;width:38px;height:38px;border-radius:50%;border:0;background:var(--brand-grad);color:#fff;font-size:17px;cursor:pointer;display:grid;place-items:center;line-height:1;transition:transform .2s var(--ease),box-shadow .2s var(--ease),opacity .2s;box-shadow:0 4px 14px rgba(99,102,241,.4)}
+.send:hover{transform:translateY(-1px) scale(1.04);box-shadow:0 6px 18px rgba(99,102,241,.5)}
+.send:active{transform:scale(.92)}
+.fine-note{font-size:12.5px;color:var(--faint);text-align:center;padding:12px 10px 0;animation:fadeRise .6s .15s var(--ease) both}
 
 /* Rail */
-.rail{display:flex;flex-direction:column;background:var(--rail);border:1px solid var(--line);border-radius:20px;padding:8px 18px}
+.rail{display:flex;flex-direction:column;background:var(--rail);border:1px solid var(--line);border-radius:22px;padding:8px 18px;animation:fadeRise .6s .1s var(--ease) both}
 .rail .acct{display:flex;align-items:center;gap:11px;padding:14px 0;border-bottom:1px solid var(--line)}
 .avatar{width:36px;height:36px;border-radius:50%;background:var(--bubble);color:var(--muted);display:grid;place-items:center;font-weight:600;font-size:15px;flex:none}
 .who{font-weight:600;line-height:1.3;font-size:14.5px;min-width:0}
 .who small{display:block;color:var(--muted);font-weight:400;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .panel{padding:15px 0;border-bottom:1px solid var(--line)}
 .panel:last-child{border-bottom:0}
-.panel h3{font-size:12px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--faint);margin-bottom:9px}
+.panel h3{font-size:11px;font-weight:650;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);margin-bottom:10px}
 .panel ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px}
 .panel li{font-size:13.8px;line-height:1.4}
 .panel li b{display:block;font-weight:600;font-size:13.8px}
 .panel li span{color:var(--muted);font-size:12.8px}
-.svc-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.svc-row{display:flex;align-items:center;justify-content:space-between;gap:10px;border-radius:12px;padding:3px 6px;margin:0 -6px;transition:background .2s var(--ease)}
+.svc-row:hover{background:var(--hover)}
 .svc-row .svc-name{font-weight:600;font-size:14px;display:flex;align-items:center;gap:8px}
-.svc-row .dot{width:8px;height:8px;border-radius:50%;background:var(--faint);flex:none}
-.svc-row.on .dot{background:var(--green)}
+.svc-row .dot{width:8px;height:8px;border-radius:50%;background:var(--faint);flex:none;transition:background .3s}
+.svc-row.on .dot{background:var(--green);box-shadow:0 0 0 3px rgba(62,207,110,.16)}
 .svc-row .svc-mail{color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
-.svc-btn{flex:none;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:600;cursor:pointer}
-.svc-btn:hover{background:var(--hover)}
+.svc-btn{flex:none;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:600;cursor:pointer;transition:background .2s var(--ease),transform .2s var(--ease)}
+.svc-btn:hover{background:var(--hover);transform:translateY(-1px)}
+.svc-btn:active{transform:scale(.96)}
 .svc-btn.off{color:var(--red)}
 .log-panel ul{gap:5px}
 .log-panel li{font-size:13px;color:var(--muted);display:flex;gap:8px;align-items:flex-start}
@@ -175,7 +181,7 @@ h1,h2,h3{margin:0;font-weight:600}
 /* In-site preview drawer — files open inside Wasipy, no new tab needed */
 .drawer-back{position:fixed;inset:0;z-index:40;background:rgba(10,10,20,.35);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .25s ease}
 .drawer-back.open{opacity:1;pointer-events:auto}
-.drawer{position:fixed;top:0;right:0;bottom:0;z-index:41;width:min(760px,96vw);background:var(--bg);border-radius:22px 0 0 22px;box-shadow:-16px 0 50px rgba(0,0,0,.22);transform:translateX(103%);transition:transform .38s cubic-bezier(.2,.9,.25,1);display:flex;flex-direction:column;overflow:hidden}
+.drawer{position:fixed;top:0;right:0;bottom:0;z-index:41;width:min(760px,96vw);background:var(--bg);border-radius:22px 0 0 22px;box-shadow:-16px 0 50px rgba(0,0,0,.22);transform:translateX(103%);transition:transform .45s var(--ease);display:flex;flex-direction:column;overflow:hidden}
 .drawer.open{transform:none}
 .drawer-head{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line);background:var(--rail)}
 .drawer-head .file-ic{width:40px;height:40px;border-radius:11px;font-size:13px}
@@ -228,7 +234,7 @@ footer{max-width:1120px;margin:0 auto;padding:6px 20px 30px;color:var(--faint);f
 
 <header class="topbar">
   <div class="topbar-in">
-    <div class="title">Wasipy <span class="chev">▾</span></div>
+    <div class="title"><span class="orb orb-mini"><span>W</span></span>Wasipy</div>
     <div class="right">
       <span class="status" id="statusPill"><i></i> Not connected</span>
       <button class="btn-g" id="connectBtn" type="button"><span class="g">G</span> Continue with Google</button>
@@ -241,7 +247,8 @@ footer{max-width:1120px;margin:0 auto;padding:6px 20px 30px;color:var(--faint);f
 <div class="layout">
 
   <main class="chat-col">
-    <div class="greeting">
+    <div class="greeting" id="greeting">
+      <div class="orb orb-hero"><span>W</span></div>
       <h1>Hi, I’m Wasipy. How can I help today?</h1>
       <p>Sign in with your own Google account, then ask in plain English. I’ll work in your Calendar, Gmail, Drive, Sheets, and Docs.</p>
     </div>
@@ -251,21 +258,13 @@ footer{max-width:1120px;margin:0 auto;padding:6px 20px 30px;color:var(--faint);f
 
 First, tap “Continue with Google” above. Then connect the services you want me to use, on the right.</div>
     </div>
-    <div class="typing" id="typing"><span class="work-pill"><span class="work-dot"></span><span class="work-txt" id="workTxt">Thinking…</span><span class="work-bar"></span></span></div>
-
-    <div class="suggest" id="chips">
-      <button class="sug-card" type="button" data-q="Book a meeting with Dr. Lee tomorrow at 10 AM"><b>Book a meeting</b><span>Tomorrow at 10 AM, in your Calendar</span></button>
-      <button class="sug-card" type="button" data-q="Show my new emails"><b>Show new emails</b><span>A short summary of your inbox</span></button>
-      <button class="sug-card" type="button" data-q="Find the invoice file in Drive"><b>Find a file</b><span>Search your Drive for the invoice</span></button>
-      <button class="sug-card" type="button" data-q="Log a $50 grocery expense in my sheet"><b>Log an expense</b><span>Add $50 for groceries to your sheet</span></button>
-      <button class="sug-card" type="button" data-q="What do I have today?"><b>What’s on today?</b><span>Your schedule at a glance</span></button>
-    </div>
+    <div class="typing" id="typing"><span class="work-pill"><span class="work-dot"></span><span class="work-txt" id="workTxt">Thinking…</span></span></div>
 
     <form class="composer" id="chatForm">
       <input id="chatInput" type="text" placeholder="Message the agent…" autocomplete="off" aria-label="Message the agent">
       <button class="send" type="submit" aria-label="Send">↑</button>
     </form>
-    <p class="demo-note">Wasipy works only in the Google account you connect. Your data is never shared with other users.</p>
+    <p class="fine-note">Wasipy works only in the Google account you connect. Your data is never shared with other users.</p>
   </main>
 
   <aside class="rail">
@@ -330,7 +329,13 @@ First, tap “Continue with Google” above. Then connect the services you want 
   var statusPill=document.getElementById('statusPill'), avatar=document.getElementById('avatar');
   var whoName=document.getElementById('whoName'), whoMail=document.getElementById('whoMail');
   var svcList=document.getElementById('svcList');
+  var greetingEl=document.getElementById('greeting');
   var signedIn=false, sending=false;
+
+  // The big greeting is the empty state — once a real conversation exists
+  // it folds away so the chat has room. New chat brings it back.
+  function hideGreeting(){ if(greetingEl) greetingEl.classList.add('hidden'); }
+  function showGreeting(){ if(greetingEl) greetingEl.classList.remove('hidden'); }
 
   var SERVICES=[
     {id:'calendar',label:'Calendar'},
@@ -677,6 +682,7 @@ First, tap “Continue with Google” above. Then connect the services you want 
   function loadHistory(){
     fetch('/api/chat').then(function(r){ if(!r.ok) return null; return r.json(); }).then(function(data){
       if(!data||!data.messages||!data.messages.length) return;
+      hideGreeting();
       chatLog.innerHTML='';
       data.messages.forEach(function(m){ addMsg(m.content, m.role==='user'?'user':'agent', m.display||null); });
     }).catch(function(){});
@@ -750,6 +756,7 @@ First, tap “Continue with Google” above. Then connect the services you want 
 
   function send(text){
     if(sending) return;
+    hideGreeting();
     if(!signedIn){
       addMsg(text,'user');
       addMsg('Connect Google first using the button above — then I can work in your Calendar, Gmail, Drive, Sheets, and Docs. Until then, I can only chat.','agent');
@@ -783,14 +790,11 @@ First, tap “Continue with Google” above. Then connect the services you want 
   newChatBtn.addEventListener('click',function(){
     if(sending) return;
     fetch('/api/chat',{method:'DELETE'})
-      .then(function(){ chatLog.innerHTML=''; addMsg('Hi, I’m Wasipy. Fresh start — ask me anything about your Calendar, Gmail, Drive, Sheets, or Docs.','agent'); })
+      .then(function(){ chatLog.innerHTML=''; showGreeting(); addMsg('Hi, I’m Wasipy. Fresh start — ask me anything about your Calendar, Gmail, Drive, Sheets, or Docs.','agent'); })
       .catch(function(){ addMsg('Could not clear the chat. Please try again.','agent'); });
   });
 
   form.addEventListener('submit',function(e){ e.preventDefault(); var v=input.value.trim(); if(!v)return; input.value=''; send(v); });
-  document.getElementById('chips').addEventListener('click',function(e){
-    var b=e.target.closest('[data-q]'); if(!b)return; send(b.getAttribute('data-q'));
-  });
 
   // Celebration shown ONLY right after a service connects (?connected=...).
   function celebrateConnect(service){
