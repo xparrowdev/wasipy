@@ -4,17 +4,19 @@
 # build and the images are generated fresh every time.
 # Run: python3 make-android-icons.py  (needs Pillow; run from mobile/)
 import os
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RES = os.path.join(ROOT, "android", "app", "src", "main", "res")
-# Brand gradient stops (top -> bottom): indigo -> violet -> blue
-STOPS = [(79, 70, 229), (124, 58, 237), (37, 99, 235)]
+# Brand colors from the official logo (Primary_logo.png):
+NAVY = (11, 27, 58)      # #0b1b3a — the rounded square
+ORANGE = (255, 176, 32)  # #ffb020 — the dot
 BG = (245, 245, 242)  # warm paper, matches the Wasipy site
-FONT_CANDIDATES = [
-    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-    "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
-]
+
+# W polyline + dot in a 0-100 box (traced from the official logo)
+W_POINTS = [(22, 30), (36, 66), (50, 43), (64, 66), (78, 35)]
+W_WIDTH = 11.5
+DOT = (80, 30, 7.5)  # cx, cy, r in the 0-100 box
 
 # density -> (legacy icon px, adaptive foreground px)
 DENSITIES = {
@@ -40,40 +42,29 @@ SPLASHES = [
 ]
 
 
-def gradient(size, stops):
-    img = Image.new("RGB", (size, size))
-    px = img.load()
-    n = len(stops) - 1
-    for y in range(size):
-        t = y / max(size - 1, 1) * n
-        i = min(int(t), n - 1)
-        f = t - i
-        c0, c1 = stops[i], stops[i + 1]
-        c = tuple(round(c0[k] + (c1[k] - c0[k]) * f) for k in range(3))
-        for x in range(size):
-            px[x, y] = c
-    return img.convert("RGBA")
-
-
-def font_for(px):
-    for candidate in FONT_CANDIDATES:
-        if os.path.exists(candidate):
-            try:
-                return ImageFont.truetype(candidate, px)
-            except OSError:
-                continue
-    return ImageFont.load_default()
-
-
-def draw_w(img, size, font_px):
+def draw_mark(img, size, scale=1.0):
+    """Draw the white W + orange dot, centered, in a size x size image."""
     d = ImageDraw.Draw(img)
-    d.text(
-        (size / 2, size / 2 - size * 0.03),
-        "W",
-        font=font_for(font_px),
-        fill=(255, 255, 255, 255),
-        anchor="mm",
-    )
+    cx = cy = size / 2
+
+    def pt(x, y):
+        return (cx + (x - 50) * scale * size / 100,
+                cy + (y - 50) * scale * size / 100)
+
+    w = max(1, round(W_WIDTH * scale * size / 100))
+    pts = [pt(x, y) for x, y in W_POINTS]
+    d.line(pts, fill=(255, 255, 255, 255), width=w, joint="curve")
+    # round caps (PIL lines have flat ends)
+    for x, y in (pts[0], pts[-1]):
+        r = w / 2
+        d.ellipse([x - r, y - r, x + r, y + r], fill=(255, 255, 255, 255))
+    dx, dy = pt(DOT[0], DOT[1])
+    dr = DOT[2] * scale * size / 100
+    d.ellipse([dx - dr, dy - dr, dx + dr, dy + dr], fill=ORANGE + (255,))
+
+
+def solid(size, color):
+    return Image.new("RGBA", (size, size), color + (255,))
 
 
 def rounded_mask(size, radius):
@@ -94,29 +85,29 @@ def main():
     for density, (icon_px, fg_px) in DENSITIES.items():
         folder = os.path.join(RES, f"mipmap-{density}")
         os.makedirs(folder, exist_ok=True)
-        # Legacy launcher: gradient rounded square + W.
-        icon = gradient(icon_px, STOPS)
+        # Legacy launcher: navy rounded square + W + dot.
+        icon = solid(icon_px, NAVY)
         icon.putalpha(rounded_mask(icon_px, round(icon_px * 0.22)))
-        draw_w(icon, icon_px, round(icon_px * 0.58))
+        draw_mark(icon, icon_px)
         icon.save(os.path.join(folder, "ic_launcher.png"))
-        # Round launcher: gradient circle + W.
-        rnd = gradient(icon_px, STOPS)
+        # Round launcher: navy circle + W + dot.
+        rnd = solid(icon_px, NAVY)
         rnd.putalpha(circle_mask(icon_px))
-        draw_w(rnd, icon_px, round(icon_px * 0.58))
+        draw_mark(rnd, icon_px)
         rnd.save(os.path.join(folder, "ic_launcher_round.png"))
-        # Adaptive foreground: full-bleed gradient + W (the launcher masks
-        # the shape; the W stays inside the 66dp safe zone).
-        fg = gradient(fg_px, STOPS)
-        draw_w(fg, fg_px, round(fg_px * 0.52))
+        # Adaptive foreground: full-bleed navy + W + dot, drawn at 80%
+        # so the mark stays inside the launcher's 66dp safe zone.
+        fg = solid(fg_px, NAVY)
+        draw_mark(fg, fg_px, scale=0.8)
         fg.save(os.path.join(folder, "ic_launcher_foreground.png"))
     for folder, w, h in SPLASHES:
         path = os.path.join(RES, folder)
         os.makedirs(path, exist_ok=True)
         img = Image.new("RGB", (w, h), BG).convert("RGBA")
         s = round(min(w, h) * 0.28)
-        mark = gradient(s, STOPS)
+        mark = solid(s, NAVY)
         mark.putalpha(rounded_mask(s, round(s * 0.22)))
-        draw_w(mark, s, round(s * 0.58))
+        draw_mark(mark, s)
         img.paste(mark, ((w - s) // 2, (h - s) // 2), mark)
         img.convert("RGB").save(os.path.join(path, "splash.png"))
     print("wrote android launcher icons + splash screens")

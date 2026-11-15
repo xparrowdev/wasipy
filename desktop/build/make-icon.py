@@ -1,34 +1,37 @@
 # Generates the Wasipy app icons (PNG + ICO + tray PNG) from scratch.
 # Run: python3 make-icon.py  (needs Pillow)
-from PIL import Image, ImageDraw, ImageFont
-
-import os
+from PIL import Image, ImageDraw
 
 SIZE = 512
-RADIUS = 112
-# Brand gradient stops (top -> bottom): indigo -> violet -> blue
-STOPS = [(79, 70, 229), (124, 58, 237), (37, 99, 235)]
-# Bold font candidates (Linux, Windows, macOS) — first one that exists wins.
-FONT_CANDIDATES = [
-    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-    "C:/Windows/Fonts/arialbd.ttf",
-    "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
-]
+RADIUS = 112  # ~22% of 512, matches the logo's corner radius
+# Brand colors from the official logo (Primary_logo.png):
+NAVY = (11, 27, 58)      # #0b1b3a — the rounded square
+ORANGE = (255, 176, 32)  # #ffb020 — the dot
+
+# W polyline + dot in a 0-100 box (traced from the official logo)
+W_POINTS = [(22, 30), (36, 66), (50, 43), (64, 66), (78, 35)]
+W_WIDTH = 11.5
+DOT = (80, 30, 7.5)  # cx, cy, r in the 0-100 box
 
 
-def gradient(size, stops):
-    img = Image.new("RGB", (size, size))
-    px = img.load()
-    n = len(stops) - 1
-    for y in range(size):
-        t = y / max(size - 1, 1) * n
-        i = min(int(t), n - 1)
-        f = t - i
-        c0, c1 = stops[i], stops[i + 1]
-        c = tuple(round(c0[k] + (c1[k] - c0[k]) * f) for k in range(3))
-        for x in range(size):
-            px[x, y] = c
-    return img
+def draw_mark(img, size):
+    """Draw the white W + orange dot, centered, in a size x size image."""
+    d = ImageDraw.Draw(img)
+    cx = cy = size / 2
+
+    def pt(x, y):
+        return (cx + (x - 50) * size / 100, cy + (y - 50) * size / 100)
+
+    w = max(1, round(W_WIDTH * size / 100))
+    pts = [pt(x, y) for x, y in W_POINTS]
+    d.line(pts, fill=(255, 255, 255, 255), width=w, joint="curve")
+    # round caps (PIL lines have flat ends)
+    for x, y in (pts[0], pts[-1]):
+        r = w / 2
+        d.ellipse([x - r, y - r, x + r, y + r], fill=(255, 255, 255, 255))
+    dx, dy = pt(DOT[0], DOT[1])
+    dr = DOT[2] * size / 100
+    d.ellipse([dx - dr, dy - dr, dx + dr, dy + dr], fill=ORANGE + (255,))
 
 
 def rounded_mask(size, radius):
@@ -39,26 +42,9 @@ def rounded_mask(size, radius):
 
 
 def main():
-    base = gradient(SIZE, STOPS).convert("RGBA")
+    base = Image.new("RGBA", (SIZE, SIZE), NAVY + (255,))
     base.putalpha(rounded_mask(SIZE, RADIUS))
-    d = ImageDraw.Draw(base)
-    font = None
-    for candidate in FONT_CANDIDATES:
-        if os.path.exists(candidate):
-            try:
-                font = ImageFont.truetype(candidate, 300)
-                break
-            except OSError:
-                continue
-    if font is None:
-        font = ImageFont.load_default()
-    d.text(
-        (SIZE / 2, SIZE / 2 - 14),
-        "W",
-        font=font,
-        fill=(255, 255, 255, 255),
-        anchor="mm",
-    )
+    draw_mark(base, SIZE)
     base.save("icon.png")
     base.resize((32, 32), Image.LANCZOS).save("tray.png")
     base.save(

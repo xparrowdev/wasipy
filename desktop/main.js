@@ -161,7 +161,7 @@ function cleanupAuthFlow() {
 }
 
 function authPage(ok, message) {
-  return `<!doctype html><html><head><meta charset="utf-8"><title>Wasipy</title><style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#101013;color:#f4f4f5;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}main{text-align:center;padding:32px}h1{font-size:22px;margin:0 0 8px}p{color:#a1a1aa;margin:0}.mark{width:56px;height:56px;border-radius:16px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:700;color:#fff;background:linear-gradient(135deg,#4f46e5,#7c3aed,#2563eb)}</style></head><body><main><div class="mark">W</div><h1>${
+  return `<!doctype html><html><head><meta charset="utf-8"><title>Wasipy</title><style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#101013;color:#f4f4f5;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}main{text-align:center;padding:32px}h1{font-size:22px;margin:0 0 8px}p{color:#a1a1aa;margin:0}.mark{width:56px;height:56px;margin:0 auto 16px}.mark svg{width:100%;height:100%;display:block}</style></head><body><main><div class="mark"><svg viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#0b1b3a"/><path d="M22 30 L36 66 L50 43 L64 66 L78 35" fill="none" stroke="#fff" stroke-width="11.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="80" cy="30" r="7.5" fill="#ffb020"/></svg></div><h1>${
     ok ? 'All done' : 'Not completed'
   }</h1><p>${message}</p></main></body></html>`;
 }
