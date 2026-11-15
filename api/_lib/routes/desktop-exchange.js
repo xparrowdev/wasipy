@@ -96,6 +96,9 @@ module.exports = async (req, res) => {
         await saveConnection(session.userId, service, tokens, info.email);
       } catch (e) {
         console.error('desktop connect: saveConnection failed', e);
+        if (e.code === 'NO_REFRESH_TOKEN') {
+          return json(res, 400, { ok: false, error: 'Google did not give Wasipy a connection token. Please try again — if it keeps happening, remove Wasipy from your Google Account (Security → Third-party access) and connect again.' });
+        }
         return json(res, 400, { ok: false, error: 'Could not save this connection (database error). Please try again.' });
       }
       await logActivity(session.userId, `Connected ${SERVICES[service].label} (${info.email})`);

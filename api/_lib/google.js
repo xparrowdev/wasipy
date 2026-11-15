@@ -91,6 +91,21 @@ async function saveConnection(userId, service, tokens, email) {
     // Only the refresh token is stored, encrypted. Access tokens are short
     // lived and re-derived from it on every use.
     doc.refreshTokenEnc = encrypt(tokens.refresh_token);
+  } else {
+    // Google sometimes omits the refresh token on re-authorization. Keep
+    // the stored one instead of wiping access — but if there is no stored
+    // one either, refuse to save: a row without a token looks "Connected"
+    // in the UI while the agent cannot use the service at all.
+    const existing = await db
+      .collection('googleConnections')
+      .findOne({ userId: String(userId), service });
+    if (existing && existing.refreshTokenEnc) {
+      doc.refreshTokenEnc = existing.refreshTokenEnc;
+    } else {
+      const err = new Error('Google did not return a refresh token and none is stored');
+      err.code = 'NO_REFRESH_TOKEN';
+      throw err;
+    }
   }
   await db
     .collection('googleConnections')

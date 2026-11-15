@@ -600,8 +600,9 @@ body.chatting .chat-log{display:flex}
     if(on){
       b.disabled=true;
       fetch('/api/connections?service='+encodeURIComponent(svc),{method:'DELETE'})
-        .then(function(r){return r.json();})
-        .then(function(){ loadMe(); loadActivity(); addLog('Disconnected '+svc); });
+        .then(function(r){ if(!r.ok) throw new Error('disconnect failed'); return r.json(); })
+        .then(function(){ loadMe(); loadActivity(); addLog('Disconnected '+svc); })
+        .catch(function(){ b.disabled=false; addMsg('Could not disconnect '+svc+'. Please try again.','agent'); });
     } else {
       window.location.href='/api/auth/google?action=connect&service='+encodeURIComponent(svc);
     }
