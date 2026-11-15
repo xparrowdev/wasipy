@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="color-scheme" content="light dark">
+<meta name="color-scheme" content="light">
 <link rel="icon" href="data:,">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,7 +13,7 @@
 :root{
   --bg:#f5f5f2; --bg-soft:rgba(245,245,242,.86); --ink:#14151a; --mute:#62646e; --faint:#8b8d97;
   --line:#e4e2da; --line2:#cfccc1; --card:#ffffff; --card-soft:#fafaf8; --bubble:#eceae2; --hover:#f0eee8;
-  --btn:#14151a; --btn-ink:#ffffff; --ring:rgba(20,21,26,.35);
+  --btn:#14151a; --btn-ink:#ffffff; --ring:rgba(20,21,26,.33);
   --green:#1a7f37; --amber:#9a6700; --red:#c0271b; --brand:#4285f4;
   --brand-grad:linear-gradient(90deg,#4285f4,#ea4335,#fbbc05,#34a853);
   --shadow-lg:0 1px 2px rgba(20,21,26,.04),0 12px 32px rgba(20,21,26,.05),0 40px 80px rgba(20,21,26,.04);
@@ -23,19 +23,6 @@
   --shine:rgba(255,255,255,.45);
   --ease:cubic-bezier(.22,1,.36,1);
 }
-@media (prefers-color-scheme: dark){
-  :root{
-    --bg:#0e1013; --bg-soft:rgba(14,16,19,.86); --ink:#f2f3f5; --mute:#9ba1a8; --faint:#6b7178;
-    --line:rgba(255,255,255,.09); --line2:rgba(255,255,255,.16); --card:#17191d; --card-soft:#1d2026; --bubble:#23272e; --hover:#22262d;
-    --btn:#f2f3f5; --btn-ink:#0e1013; --ring:rgba(242,243,245,.35);
-    --green:#3ecf6e; --amber:#e8b93e; --red:#ff8a7a; --brand:#4285f4;
-    --shadow-lg:0 1px 2px rgba(0,0,0,.3),0 12px 32px rgba(0,0,0,.35),0 40px 80px rgba(0,0,0,.3);
-    --shadow:0 12px 40px rgba(0,0,0,.45),0 2px 8px rgba(0,0,0,.3);
-    --shadow-btn:0 1px 0 rgba(255,255,255,.25) inset,0 6px 16px rgba(0,0,0,.5);
-    --shadow-btn-hover:0 1px 0 rgba(255,255,255,.25) inset,0 12px 24px rgba(0,0,0,.55);
-    --shine:rgba(0,0,0,.12);
-  }
-}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
@@ -43,11 +30,11 @@ button{font-family:inherit}
 h1,h2,h3{margin:0}
 @keyframes up{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
 
-.w{min-height:100vh;position:relative}
+.w{min-height:900px;position:relative;overflow:clip}
 .in{max-width:980px;margin:0 auto;padding:0 28px 56px}
 
 /* Top bar */
-.top{position:sticky;top:0;z-index:20;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:20px 0;background:var(--bg-soft);backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2)}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:24px 0}
 .wm{display:flex;align-items:center;gap:10px;font:800 20px Manrope,Inter,sans-serif;letter-spacing:-.02em}
 .lg{width:32px;height:32px;border-radius:10px;background:var(--btn);color:var(--btn-ink);display:grid;place-items:center;flex:none}
 .rt{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end;font-size:13px;color:var(--mute);animation:up .7s .2s cubic-bezier(.2,.8,.2,1) backwards}
@@ -70,7 +57,7 @@ h1,h2,h3{margin:0}
 /* Hero — folds away once a real conversation starts */
 .hero{text-align:center;padding:48px 0 30px;max-height:420px;overflow:hidden;transition:max-height .5s var(--ease),opacity .35s ease,padding .5s var(--ease)}
 body.chatting .hero{max-height:0;opacity:0;padding-top:0;padding-bottom:0}
-h1{margin:0;font:800 clamp(40px,7vw,62px)/1.04 Manrope,Inter,sans-serif;letter-spacing:-.045em}
+h1{margin:0;font:800 62px/1.04 Manrope,Inter,sans-serif;letter-spacing:-.045em}
 h1 b{display:inline-block;font-weight:800;opacity:0;filter:blur(10px);transform:translateY(16px);animation:wd .8s cubic-bezier(.2,.8,.2,1) forwards;margin:0 .13em}
 h1 b:nth-child(2){animation-delay:.08s}h1 b:nth-child(3){animation-delay:.16s}h1 b:nth-child(5){animation-delay:.32s}
 h1 .g{background:linear-gradient(90deg,#4285f4,#ea4335,#fbbc05,#34a853,#4285f4);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:wd .8s .32s cubic-bezier(.2,.8,.2,1) forwards,gs 8s linear infinite}
@@ -99,11 +86,11 @@ body.chatting .card{position:sticky;bottom:14px;z-index:15}
 .steps{display:grid;grid-template-columns:repeat(3,1fr);position:relative;margin:44px 0 36px;animation:up .9s .7s both;max-height:200px;overflow:hidden;transition:max-height .5s var(--ease),opacity .35s ease,margin .5s var(--ease)}
 body.chatting .steps{max-height:0;opacity:0;margin-top:0;margin-bottom:0}
 .steps:before,.steps:after{content:"";position:absolute;top:15px;left:16.66%;height:2px;border-radius:2px}
-.steps:before{right:16.66%;background:var(--line)}
+.steps:before{right:16.66%;background:#dedbd1}
 .steps:after{width:0;background:var(--btn);animation:fl 3.2s cubic-bezier(.6,0,.3,1) infinite}
 @keyframes fl{0%{width:0;opacity:1}70%{width:33.33%;opacity:1}100%{width:33.33%;opacity:0}}
 .st{position:relative;text-align:center;font-size:13px;color:var(--mute);z-index:1}
-.st u{display:grid;place-items:center;width:32px;height:32px;margin:0 auto 10px;border-radius:50%;background:var(--card);border:2px solid var(--line);text-decoration:none;font:700 13px Manrope;color:var(--mute)}
+.st u{display:grid;place-items:center;width:32px;height:32px;margin:0 auto 10px;border-radius:50%;background:var(--card);border:2px solid #dedbd1;text-decoration:none;font:700 13px Manrope;color:var(--mute)}
 .st b{display:block;font:700 14px Manrope;color:var(--ink);margin-bottom:2px}
 .st.on u{background:var(--btn);border-color:var(--btn);color:var(--btn-ink);animation:rg 2s ease-out infinite}
 @keyframes rg{0%{box-shadow:0 0 0 0 var(--ring)}100%{box-shadow:0 0 0 12px transparent}}
@@ -113,7 +100,7 @@ body.chatting .steps{max-height:0;opacity:0;margin-top:0;margin-bottom:0}
 .apps{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
 .ap{padding:18px 16px 16px;background:var(--card);border:1px solid var(--line);border-radius:18px;text-align:left;animation:up .7s cubic-bezier(.2,.8,.2,1) backwards,hl 10s infinite;transition:border-color .25s,box-shadow .25s,transform .35s cubic-bezier(.2,.8,.2,1)}
 .ap:nth-child(1){--t:2s;animation-delay:.8s,2s}.ap:nth-child(2){--t:4s;animation-delay:.9s,4s}.ap:nth-child(3){--t:6s;animation-delay:1s,6s}.ap:nth-child(4){--t:8s;animation-delay:1.1s,8s}.ap:nth-child(5){--t:10s;animation-delay:1.2s,10s}
-@keyframes hl{0%{border-color:var(--line);box-shadow:none}4%,14%{border-color:var(--c);box-shadow:0 14px 30px rgba(0,0,0,.12)}22%,100%{border-color:var(--line);box-shadow:none}}
+@keyframes hl{0%{border-color:var(--line);box-shadow:none}4%,14%{border-color:var(--c);box-shadow:0 14px 30px color-mix(in srgb,var(--c) 25%,transparent)}22%,100%{border-color:var(--line);box-shadow:none}}
 .ap svg *{animation-duration:10s;animation-delay:var(--t);animation-iteration-count:infinite;animation-timing-function:cubic-bezier(.3,1.4,.5,1)}
 .ap:nth-child(1) svg text{transform-box:fill-box;transform-origin:center;animation-name:pop}
 .ap:nth-child(2) svg path{--d:34;stroke-dasharray:34;animation-name:dr;animation-timing-function:ease-out}
