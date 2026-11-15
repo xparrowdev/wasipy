@@ -7,7 +7,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230b1b3a'/%3E%3Cpath d='M22 30 L36 66 L50 43 L64 66 L78 35' fill='none' stroke='white' stroke-width='11.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='80' cy='30' r='7.5' fill='%23ffb020'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@700;800&family=Sora:wght@600;700&display=swap" rel="stylesheet">
 <title>Wasipy</title>
 <style>
 :root{
@@ -338,6 +338,106 @@ body.chatting .chat-log{display:flex}
 }
 /* Inside the Android app: no Download section — you're already in the app */
 body.in-app .dl,body.in-app .dl-link{display:none}
+
+/* ---- Phone app shell (5-tab design) — phones only; desktop keeps the home design ---- */
+.app{display:none}
+@media(max-width:640px){
+  .w{display:none}
+  .app{display:flex;position:fixed;inset:0;z-index:5;flex-direction:column;background:#F3F6FC;color:#0B1B3A;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;overflow:hidden}
+  .app-top{display:flex;align-items:center;justify-content:space-between;padding:calc(16px + env(safe-area-inset-top)) 20px 12px;flex:none}
+  .app-brand{display:flex;align-items:center;gap:10px;font:700 22px Sora,Inter,sans-serif;letter-spacing:-.02em}
+  .app-pill{display:flex;align-items:center;gap:8px;height:32px;padding:0 12px;border-radius:16px;background:#FFF1D6;font-size:13px;font-weight:500;color:#5C3B00;white-space:nowrap}
+  .app-pill i{width:8px;height:8px;border-radius:4px;background:#FFB020;flex:none}
+  .app-pill.on{background:#E7F6EE;color:#14663B}
+  .app-pill.on i{background:#2FB67C}
+  .app-main{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .app-screen{display:none;flex-direction:column;gap:20px;padding:12px 20px 20px;min-height:100%}
+  .app-screen.on{display:flex}
+  .app-h1{margin:0;font:700 28px/1.15 Sora,Inter,sans-serif;letter-spacing:-.02em}
+  .app-h1.big{font-size:30px}
+  .app-sub{margin:0;font-size:15px;line-height:1.5;color:#4A5675}
+  .app-head{display:flex;flex-direction:column;gap:8px}
+  .app-head-row{display:flex;align-items:flex-end;justify-content:space-between}
+  .app-count{font-size:14px;font-weight:500;color:#4A5675;padding-bottom:4px;white-space:nowrap}
+  .app-btn-navy{height:48px;border-radius:24px;border:0;background:#0B1B3A;color:#fff;font:600 16px Inter;cursor:pointer;width:100%}
+  .app-btn-navy:active{transform:scale(.98)}
+  .app-btn-white{height:44px;border-radius:22px;border:1px solid #CBD4E8;background:#fff;color:#0B1B3A;font:500 15px Inter;cursor:pointer;width:100%}
+  .app-btn-blue{height:48px;padding:0 24px;border-radius:24px;border:0;background:#2F6BFF;color:#fff;font:600 15px Inter;cursor:pointer;margin-top:4px}
+  .app-chips{display:flex;flex-wrap:wrap;gap:10px}
+  .app-chip{height:44px;padding:0 16px;border-radius:22px;border:1px solid #CBD4E8;background:#fff;font:500 15px Inter;color:#0B1B3A;cursor:pointer}
+  .app-chip:active{transform:scale(.97)}
+  .app-home{display:flex;flex-direction:column;gap:20px}
+  .app-chatting .app-home{display:none}
+  .app-log{display:flex;flex-direction:column;gap:12px}
+  .app-msg-user{align-self:flex-end;max-width:82%;padding:12px 16px;border-radius:20px 20px 6px 20px;background:#2F6BFF;color:#fff;font-size:15px;line-height:1.4;white-space:pre-wrap;word-wrap:break-word;animation:msgIn .4s var(--ease) both}
+  .app-msg-agent{align-self:flex-start;max-width:92%;padding:14px 16px;border-radius:20px 20px 20px 6px;background:#fff;border:1px solid #DDE3F0;font-size:15px;line-height:1.45;white-space:pre-wrap;word-wrap:break-word;animation:msgIn .4s var(--ease) both}
+  .app-msg-agent .cards{margin-top:10px}
+  .app-msg-agent .rcard{border-color:#DDE3F0}
+  .app-msg-agent .confirm-row{margin-top:12px}
+  .app-msg-agent .confirm-row .yes{background:#0B1B3A}
+  .app-typing{display:none;padding:4px 0}
+  .app-typing.show{display:block}
+  .app-composer{display:none;align-items:center;gap:10px;padding:12px 20px;flex:none}
+  .app[data-tab="chat"] .app-composer{display:flex}
+  .app-composer input{flex:1;min-width:0;height:52px;box-sizing:border-box;padding:0 20px;border-radius:26px;border:1px solid #CBD4E8;background:#fff;font:400 16px Inter;color:#0B1B3A;outline:0}
+  .app-composer input:focus{border-color:#2F6BFF}
+  .app-send{width:52px;height:52px;border-radius:26px;border:0;background:#2F6BFF;display:grid;place-items:center;cursor:pointer;flex:none}
+  .app-send:active{transform:scale(.95)}
+  .app-rows{display:flex;flex-direction:column;gap:10px}
+  .app-row{display:flex;align-items:center;gap:14px;min-height:64px;box-sizing:border-box;padding:10px 14px;border-radius:16px;background:#fff;border:1px solid #DDE3F0}
+  .app-row-ic{width:40px;height:40px;border-radius:12px;background:#E6EDFF;display:grid;place-items:center;color:#1F4FD8;flex:none}
+  .app-row-tx{flex:1;min-width:0}
+  .app-row-tx b{display:block;font-size:16px;font-weight:600}
+  .app-row-tx span{display:block;font-size:13px;color:#4A5675}
+  .app-switch{width:52px;height:32px;border-radius:16px;border:0;background:#8A96B5;padding:3px;display:flex;align-items:center;justify-content:flex-start;cursor:pointer;flex:none;transition:background .25s}
+  .app-switch span{width:26px;height:26px;border-radius:13px;background:#fff;flex:none}
+  .app-switch[aria-checked="true"]{background:#2F6BFF;justify-content:flex-end}
+  .app-empty{display:flex;flex-direction:column;align-items:center;gap:12px;padding:36px 24px;border-radius:20px;background:#fff;border:1px solid #DDE3F0;text-align:center}
+  .app-empty-ic{width:56px;height:56px;border-radius:28px;background:#E6EDFF;display:grid;place-items:center;color:#1F4FD8}
+  .app-empty b{font:600 18px Sora,Inter,sans-serif}
+  .app-empty p{margin:0;font-size:15px;line-height:1.5;color:#4A5675}
+  .app-rem-item{display:flex;align-items:flex-start;gap:10px;padding:13px 14px;border-radius:16px;background:#fff;border:1px solid #DDE3F0}
+  .app-rem-item .rem-txt{flex:1;min-width:0}
+  .app-rem-item b{display:block;font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .app-rem-item span{font-size:13px;color:#4A5675}
+  .app-rem-del{flex:none;border:0;background:transparent;color:#8A96B5;cursor:pointer;font-size:20px;line-height:1;padding:0}
+  .app-rem-del:hover{color:#C9363B}
+  .app-cron{display:none;padding:14px;border-radius:16px;background:#fff;border:1px solid #DDE3F0}
+  .app-cron.show{display:block}
+  .app-cron p{margin:0 0 8px;font-size:13px;line-height:1.5;color:#4A5675}
+  .app-cron input{width:100%;box-sizing:border-box;font-size:11.5px;padding:9px 10px;border:1px solid #DDE3F0;border-radius:10px;background:#F3F6FC;color:#0B1B3A}
+  .app-live{display:flex;align-items:center;gap:8px;height:30px;padding:0 12px;border-radius:15px;background:#E6EDFF;font-size:13px;font-weight:600;color:#1F4FD8}
+  .app-live i{width:8px;height:8px;border-radius:4px;background:#2F6BFF;animation:pu2 1.6s ease-out infinite}
+  .app-feed{display:flex;flex-direction:column}
+  .app-ev{display:flex;gap:14px}
+  .app-ev-rail{display:flex;flex-direction:column;align-items:center;padding-top:6px;flex:none}
+  .app-ev-dot{width:12px;height:12px;border-radius:6px;flex:none}
+  .app-ev-line{width:2px;flex:1;background:#DDE3F0;margin-top:6px;min-height:14px}
+  .app-ev:last-child .app-ev-line{display:none}
+  .app-ev-card{flex:1;display:flex;flex-direction:column;gap:4px;padding:14px 16px;border-radius:16px;background:#fff;border:1px solid #DDE3F0;margin-bottom:14px;min-width:0}
+  .app-ev:last-child .app-ev-card{margin-bottom:0}
+  .app-ev-card b{font-size:16px;font-weight:600}
+  .app-ev-card span{font-size:14px;line-height:1.45;color:#4A5675;word-break:break-word}
+  .app-info{display:flex;flex-direction:column;gap:8px;padding:18px 16px;border-radius:16px;background:#E6EDFF}
+  .app-info b{font-size:15px;font-weight:600;color:#123A99}
+  .app-info span{font-size:14px;line-height:1.45;color:#2B3F6E}
+  .app-profile{display:flex;flex-direction:column;gap:14px;padding:20px;border-radius:20px;background:#fff;border:1px solid #DDE3F0}
+  .app-who{display:flex;align-items:center;gap:14px}
+  .app-ava{width:52px;height:52px;border-radius:26px;background:#E6EDFF;display:grid;place-items:center;color:#1F4FD8;flex:none}
+  .app-who b{display:block;font-size:17px;font-weight:600;word-break:break-all}
+  .app-who span{display:block;font-size:14px;color:#4A5675;word-break:break-all}
+  .app-privacy{display:flex;gap:12px;padding:16px;border-radius:16px;background:#E6EDFF}
+  .app-privacy svg{flex:none;margin-top:1px}
+  .app-privacy span{font-size:14px;line-height:1.5;color:#2B3F6E}
+  .app-menu{display:flex;flex-direction:column;border-radius:16px;background:#fff;border:1px solid #DDE3F0;overflow:hidden}
+  .app-menu-row{display:flex;align-items:center;justify-content:space-between;height:56px;padding:0 16px;border:0;background:none;width:100%;cursor:pointer;font:500 16px Inter;color:#0B1B3A;text-align:left}
+  .app-menu-row + .app-menu-row{border-top:1px solid #E6EAF4}
+  .app-menu-row span{font-size:15px;color:#4A5675;font-weight:400}
+  button.app-menu-row:active{background:#F3F6FC}
+  .app-nav{display:flex;height:76px;padding-bottom:env(safe-area-inset-bottom);background:#fff;border-top:1px solid #DDE3F0;flex:none}
+  .app-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:0;background:none;font:500 12px Inter;color:#4A5675;cursor:pointer;padding:0}
+  .app-tab.on{font-weight:600;color:#1F4FD8}
+}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}h1 b,.ap,.card,.sub,.steps{opacity:1;filter:none;transform:none}}
 </style>
 </head>
@@ -420,6 +520,114 @@ body.in-app .dl,body.in-app .dl-link{display:none}
 
 </div></div>
 
+<!-- Phone app shell: 5-tab design (Chat / Apps / Reminders / Activity / Account). Shown on phones only. -->
+<div class="app" id="appShell" data-tab="chat">
+  <div class="app-top">
+    <div class="app-brand">
+      <svg width="36" height="36" viewBox="0 0 120 120" role="img" aria-label="Wasipy" xmlns="http://www.w3.org/2000/svg"><rect width="120" height="120" rx="30" fill="#0B1B3A"></rect><path d="M24 36 L42 82 L60 48 L78 82 L96 36" fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="96" cy="36" r="9" fill="#FFB020"></circle></svg>
+      Wasipy
+    </div>
+    <span class="app-pill" id="appPill"><i></i>Not connected</span>
+  </div>
+  <main class="app-main">
+    <section class="app-screen on" id="screen-chat">
+      <div class="app-home" id="appHome">
+        <div class="app-head">
+          <h1 class="app-h1 big">What should I do?</h1>
+          <p class="app-sub">Ask in plain words. I work inside your own Google account.</p>
+        </div>
+        <div class="app-chips">
+          <button type="button" class="app-chip" data-prompt="Book a meeting">Book a meeting</button>
+          <button type="button" class="app-chip" data-prompt="Show my new emails">Show my new emails</button>
+          <button type="button" class="app-chip" data-prompt="Find a file in Drive">Find a file in Drive</button>
+        </div>
+        <div class="app-msg-agent" id="appSigninCard">
+          <div>Sign in with Google to get started.</div>
+          <button type="button" class="app-btn-navy" id="appChatLogin" style="margin-top:12px">Continue with Google</button>
+        </div>
+      </div>
+      <div class="app-log" id="appLog"></div>
+      <div class="app-typing" id="appTyping"><span class="work-pill"><span class="work-dot"></span><span class="work-txt" id="appWorkTxt">Thinking…</span></span></div>
+    </section>
+    <section class="app-screen" id="screen-apps">
+      <div class="app-head">
+        <h1 class="app-h1">Connect apps</h1>
+        <p class="app-sub">Pick what Wasipy can use. You can change this any time.</p>
+      </div>
+      <button type="button" class="app-btn-navy" id="appAppsLogin">Continue with Google</button>
+      <div class="app-rows" id="appServices"></div>
+    </section>
+    <section class="app-screen" id="screen-reminders">
+      <div class="app-head-row">
+        <h1 class="app-h1">Reminders</h1>
+        <div class="app-count" id="appRemCount">0 scheduled</div>
+      </div>
+      <div class="app-empty" id="appRemEmpty">
+        <div class="app-empty-ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 0 1 12 0c0 6 2 7 2 7H4s2-1 2-7z"></path><path d="M10 20a2 2 0 0 0 4 0"></path></svg></div>
+        <b>Nothing scheduled yet</b>
+        <p>Ask me to remind you about anything.</p>
+        <button type="button" class="app-btn-blue" id="appAskRemind">Ask Wasipy to remind me</button>
+      </div>
+      <div class="app-rows" id="appRemList" style="display:none"></div>
+      <div class="app-rows">
+        <div class="app-row">
+          <div class="app-row-tx"><b>Enable notifications</b><span>Get a ping when a reminder is due</span></div>
+          <button type="button" class="app-switch" id="appNotifSwitch" role="switch" aria-checked="false" aria-label="Enable notifications"><span></span></button>
+        </div>
+        <div class="app-row">
+          <div class="app-row-tx"><b>Email reminders</b><span>Also send reminders to your inbox</span></div>
+          <button type="button" class="app-switch" id="appEmailSwitch" role="switch" aria-checked="false" aria-label="Email reminders"><span></span></button>
+        </div>
+      </div>
+      <div class="app-cron" id="appCronBox">
+        <p>Open this link every 5 minutes with a free service like cron-job.org, and Wasipy will email your reminders. Keep this link private — anyone with it can trigger your reminder emails.</p>
+        <input id="appCronUrl" readonly value="">
+      </div>
+    </section>
+    <section class="app-screen" id="screen-activity">
+      <div class="app-head-row" style="align-items:center">
+        <h1 class="app-h1">Activity</h1>
+        <div class="app-live"><i></i>Live</div>
+      </div>
+      <div class="app-feed" id="appFeed"></div>
+      <div class="app-info">
+        <b>Every action shows up here</b>
+        <span>When Wasipy books, finds, logs or writes something, you will see it in this list as it happens.</span>
+      </div>
+    </section>
+    <section class="app-screen" id="screen-account">
+      <h1 class="app-h1">Account</h1>
+      <div class="app-profile">
+        <div class="app-who">
+          <div class="app-ava"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg></div>
+          <div><b id="appAccName">Not signed in</b><span id="appAccSub">Connect Google to get started</span></div>
+        </div>
+        <button type="button" class="app-btn-navy" id="appAccLogin">Continue with Google</button>
+        <button type="button" class="app-btn-white" id="appAccLogout" style="display:none">Sign out</button>
+      </div>
+      <div class="app-privacy">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1F4FD8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"></path><path d="M9 12l2 2 4-4"></path></svg>
+        <span>Wasipy works only in the Google account you connect. Your data stays yours and is never shared with other users.</span>
+      </div>
+      <div class="app-menu">
+        <button type="button" class="app-menu-row" id="appNewChat">New chat <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4A5675" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></button>
+        <div class="app-menu-row">Version <span>1.0.0</span></div>
+      </div>
+    </section>
+  </main>
+  <form class="app-composer" id="appForm">
+    <input id="appInput" aria-label="Message Wasipy" placeholder="Ask Wasipy anything" autocomplete="off">
+    <button type="submit" class="app-send" aria-label="Send"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"></path><path d="M5 12l7-7 7 7"></path></svg></button>
+  </form>
+  <nav class="app-nav" id="appNav">
+    <button type="button" class="app-tab on" data-tab="chat"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"></path></svg>Chat</button>
+    <button type="button" class="app-tab" data-tab="apps"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="2"></rect><rect x="14" y="3" width="7" height="7" rx="2"></rect><rect x="3" y="14" width="7" height="7" rx="2"></rect><rect x="14" y="14" width="7" height="7" rx="2"></rect></svg>Apps</button>
+    <button type="button" class="app-tab" data-tab="reminders"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 0 1 12 0c0 6 2 7 2 7H4s2-1 2-7z"></path><path d="M10 20a2 2 0 0 0 4 0"></path></svg>Reminders</button>
+    <button type="button" class="app-tab" data-tab="activity"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"></path></svg>Activity</button>
+    <button type="button" class="app-tab" data-tab="account"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg>Account</button>
+  </nav>
+</div>
+
 <div class="drawer-back" id="drawerBack"></div>
 <aside class="drawer" id="drawer" aria-label="File preview">
   <div class="drawer-head">
@@ -445,6 +653,28 @@ body.in-app .dl,body.in-app .dl-link{display:none}
   var form=document.getElementById('chatForm'), input=document.getElementById('chatInput');
   var connectBtn=document.getElementById('connectBtn'), disconnectBtn=document.getElementById('disconnectBtn');
   var newChatBtn=document.getElementById('newChatBtn');
+
+  // Phone app shell (5 tabs). Same data, same actions — a second view of
+  // the same account. The shell only shows on phones (CSS media query).
+  var appShell=document.getElementById('appShell');
+  var appLog=document.getElementById('appLog'), appTyping=document.getElementById('appTyping');
+  var appForm=document.getElementById('appForm'), appInput=document.getElementById('appInput');
+  var appPill=document.getElementById('appPill');
+  var appServicesEl=document.getElementById('appServices');
+  var appFeed=document.getElementById('appFeed');
+  var appRemList=document.getElementById('appRemList'), appRemEmpty=document.getElementById('appRemEmpty'), appRemCount=document.getElementById('appRemCount');
+  function switchTab(name){
+    appShell.setAttribute('data-tab',name);
+    ['chat','apps','reminders','activity','account'].forEach(function(t){
+      document.getElementById('screen-'+t).classList.toggle('on',t===name);
+    });
+    var tabs=document.querySelectorAll('#appNav .app-tab');
+    tabs.forEach(function(b){ b.classList.toggle('on',b.getAttribute('data-tab')===name); });
+  }
+  document.getElementById('appNav').addEventListener('click',function(e){
+    var b=e.target.closest('[data-tab]'); if(!b)return;
+    switchTab(b.getAttribute('data-tab'));
+  });
 
   // ---------- Android app (Capacitor) sign-in ----------
   // Inside the Android app the page runs in a WebView, and Google blocks
@@ -496,7 +726,7 @@ body.in-app .dl,body.in-app .dl-link{display:none}
 
   // Home view vs chat view: the hero + steps fold away once a real
   // conversation exists (body.chatting), and come back on New chat.
-  function setChatting(on){ document.body.classList.toggle('chatting',!!on); }
+  function setChatting(on){ document.body.classList.toggle('chatting',!!on); appShell.classList.toggle('app-chatting',!!on); }
 
   // App cards — order matters: the design's icon animations target each
   // card by position (Calendar 1, Gmail 2, Drive 3, Sheets 4, Docs 5).
@@ -508,7 +738,10 @@ body.in-app .dl,body.in-app .dl-link{display:none}
     {id:'docs',label:'Docs',color:'#4285f4',svg:'<svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><rect x="8" y="4" width="24" height="32" rx="5" fill="#4285f4"></rect><path d="M13 16h14M13 22h14M13 28h8" stroke="#fff" stroke-width="2.4" stroke-linecap="round"></path></svg>'}
   ];
 
-  function scrollChat(){ var last=chatLog.lastElementChild; if(last) last.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+  function scrollChat(){
+    var last=chatLog.lastElementChild; if(last) last.scrollIntoView({behavior:'smooth',block:'nearest'});
+    var alast=appLog.lastElementChild; if(alast) alast.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
   function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   // Old messages saved before rich cards sometimes contain raw pasted
   // links / markdown. Show them cleaned up (cards carry the real links).
@@ -525,23 +758,38 @@ body.in-app .dl,body.in-app .dl-link{display:none}
     var d=document.createElement('div'); d.className='msg '+who;
     d.textContent=(who==='agent')?cleanDisplayText(text):text;
     if(display) renderDisplay(display,d);
-    chatLog.appendChild(d); scrollChat(); return d;
+    chatLog.appendChild(d);
+    // Same message in the phone app view, in the app's bubble style.
+    var a=document.createElement('div'); a.className=who==='user'?'app-msg-user':'app-msg-agent';
+    a.textContent=(who==='agent')?cleanDisplayText(text):text;
+    if(display) renderDisplay(display,a);
+    appLog.appendChild(a);
+    d._app=a;
+    scrollChat(); return d;
   }
 
   // Working indicator: rotating status phrases while the agent works.
   var workTxt=document.getElementById('workTxt');
+  var appWorkTxt=document.getElementById('appWorkTxt');
+  function showTyping(on){
+    typing.classList.toggle('show',!!on);
+    appTyping.classList.toggle('show',!!on);
+  }
   var WORK_PHRASES=['Thinking…','Checking your Google apps…','Searching your Drive…','Reading your Gmail…','Checking your Calendar…','Putting it together…'];
   var workIdx=0, workTimer=null;
   function startWork(){
     if(workTimer||!workTxt)return;
     workIdx=0; workTxt.textContent=WORK_PHRASES[0]; workTxt.classList.remove('swap');
+    if(appWorkTxt){ appWorkTxt.textContent=WORK_PHRASES[0]; appWorkTxt.classList.remove('swap'); }
     if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
     workTimer=setInterval(function(){
       workTxt.classList.add('swap');
+      if(appWorkTxt)appWorkTxt.classList.add('swap');
       setTimeout(function(){
         workIdx=(workIdx+1)%WORK_PHRASES.length;
         workTxt.textContent=WORK_PHRASES[workIdx];
         workTxt.classList.remove('swap');
+        if(appWorkTxt){ appWorkTxt.textContent=WORK_PHRASES[workIdx]; appWorkTxt.classList.remove('swap'); }
       },260);
     },2200);
   }
@@ -742,11 +990,36 @@ body.in-app .dl,body.in-app .dl-link{display:none}
     li.appendChild(el('u',null,st.pill));
     return li;
   }
+  function appEvColor(text){
+    if(/^Connected\b/.test(text)) return '#1D8A5C';
+    if(/^Disconnected\b/.test(text)) return '#C9363B';
+    if(/^Signed in\b/.test(text)) return '#0B1B3A';
+    if(/^Booked\b/.test(text)) return '#2F6BFF';
+    if(/^Sent email\b/.test(text)) return '#1D8A5C';
+    if(/^Added a row\b/.test(text)) return '#1D8A5C';
+    if(/^Created doc\b/.test(text)) return '#1D8A5C';
+    return '#FFB020';
+  }
+  function appEvRow(text){
+    var p=evParts(text);
+    var row=document.createElement('div'); row.className='app-ev';
+    var rail=document.createElement('div'); rail.className='app-ev-rail';
+    var dot=document.createElement('div'); dot.className='app-ev-dot'; dot.style.background=appEvColor(text);
+    var line=document.createElement('div'); line.className='app-ev-line';
+    rail.appendChild(dot); rail.appendChild(line);
+    var card=document.createElement('div'); card.className='app-ev-card';
+    card.appendChild(el('b',null,p.title));
+    if(p.detail) card.appendChild(el('span',null,p.detail));
+    row.appendChild(rail); row.appendChild(card);
+    return row;
+  }
   function addLog(text){
     log.insertBefore(evRow(text,0), log.firstChild);
+    appFeed.insertBefore(appEvRow(text), appFeed.firstChild);
   }
   function setLog(items){
     log.innerHTML='';
+    appFeed.innerHTML='';
     if(!items.length){
       var li=document.createElement('li');
       li.className='ev si'; li.style.setProperty('--i','0');
@@ -755,9 +1028,11 @@ body.in-app .dl,body.in-app .dl-link{display:none}
       span.appendChild(el('b',null,'Nothing yet'));
       span.appendChild(el('em',null,'Ask me to do something.'));
       li.appendChild(span);
-      log.appendChild(li); return;
+      log.appendChild(li);
+      appFeed.appendChild(appEvRow('Agent ready (Sign in with Google to begin.)'));
+      return;
     }
-    items.forEach(function(it,i){ log.appendChild(evRow(it.text,i)); });
+    items.forEach(function(it,i){ log.appendChild(evRow(it.text,i)); appFeed.appendChild(appEvRow(it.text)); });
   }
 
   function renderServices(connections){
@@ -773,7 +1048,49 @@ body.in-app .dl,body.in-app .dl-link{display:none}
         '<button type="button" class="'+(c?'off':'')+'" data-svc="'+s.id+'" data-on="'+(c?'1':'0')+'">'+(c?'Disconnect':'Connect')+'</button>';
       appsGrid.appendChild(card);
     });
+    renderAppServices(connections);
   }
+
+  // App view: same 5 services, in the design's order, with toggle switches.
+  var APP_SERVICES=[
+    {id:'gmail',label:'Gmail',desc:'Read and write emails',svg:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="M3 7l9 6 9-6"></path></svg>'},
+    {id:'calendar',label:'Calendar',desc:'Book and move meetings',svg:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg>'},
+    {id:'drive',label:'Drive',desc:'Find and open files',svg:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>'},
+    {id:'docs',label:'Docs',desc:'Write documents',svg:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h8l4 4v14H6z"></path><path d="M14 3v4h4M9 12h6M9 16h6"></path></svg>'},
+    {id:'sheets',label:'Sheets',desc:'Log rows and data',svg:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M3 10h18M3 15h18M9 4v16"></path></svg>'}
+  ];
+  function renderAppServices(connections){
+    var map={}; (connections||[]).forEach(function(c){ map[c.service]=c; });
+    appServicesEl.innerHTML='';
+    APP_SERVICES.forEach(function(s){
+      var c=map[s.id];
+      var row=document.createElement('div'); row.className='app-row';
+      row.innerHTML='<div class="app-row-ic">'+s.svg+'</div><div class="app-row-tx"><b>'+esc(s.label)+'</b><span>'+esc(s.desc)+'</span></div>';
+      var sw=document.createElement('button');
+      sw.type='button'; sw.className='app-switch'; sw.setAttribute('role','switch');
+      sw.setAttribute('aria-checked',c?'true':'false'); sw.setAttribute('aria-label',s.label);
+      sw.setAttribute('data-svc',s.id); sw.setAttribute('data-on',c?'1':'0');
+      sw.appendChild(el('span'));
+      row.appendChild(sw);
+      appServicesEl.appendChild(row);
+    });
+  }
+
+  appServicesEl.addEventListener('click',function(e){
+    var b=e.target.closest('[data-svc]'); if(!b)return;
+    var svc=b.getAttribute('data-svc'), on=b.getAttribute('data-on')==='1';
+    if(!signedIn){ showToast('Sign in with Google first, then you can connect '+svc+'.'); switchTab('account'); return; }
+    if(on){
+      b.disabled=true;
+      fetch('/api/connections?service='+encodeURIComponent(svc),{method:'DELETE'})
+        .then(function(r){ if(!r.ok) throw new Error('disconnect failed'); return r.json(); })
+        .then(function(){ loadMe(); loadActivity(); addLog('Disconnected '+svc); })
+        .catch(function(){ b.disabled=false; showToast('Could not disconnect '+svc+'. Please try again.'); });
+    } else {
+      if(isCapacitor){ mobileAuth('connect',svc); return; }
+      window.location.href='/api/auth/google?action=connect&service='+encodeURIComponent(svc);
+    }
+  });
 
   appsGrid.addEventListener('click',function(e){
     var b=e.target.closest('[data-svc]'); if(!b)return;
@@ -796,13 +1113,29 @@ body.in-app .dl,body.in-app .dl-link{display:none}
       signedIn=!!data.user;
       renderServices(data.connections||[]);
       stepsEl.style.display=signedIn?'none':'';
+      var n=(data.connections||[]).length;
       if(data.user){
-        statusPill.innerHTML='<i></i> Connected · '+(data.connections||[]).length+' service'+((data.connections||[]).length===1?'':'s');
+        statusPill.innerHTML='<i></i> Connected · '+n+' service'+(n===1?'':'s');
         statusPill.classList.add('on');
         connectBtn.style.display='none'; disconnectBtn.style.display=''; newChatBtn.style.display='';
+        appPill.innerHTML='<i></i> Connected · '+n+' service'+(n===1?'':'s');
+        appPill.classList.add('on');
+        document.getElementById('appSigninCard').style.display='none';
+        document.getElementById('appAppsLogin').style.display='none';
+        document.getElementById('appAccLogin').style.display='none';
+        document.getElementById('appAccLogout').style.display='';
+        document.getElementById('appAccName').textContent=data.user.name||data.user.email||'Signed in';
+        document.getElementById('appAccSub').textContent=data.user.name?data.user.email:'Signed in with Google';
       } else {
         statusPill.innerHTML='<i></i> Not connected'; statusPill.classList.remove('on');
         connectBtn.style.display=''; disconnectBtn.style.display='none'; newChatBtn.style.display='none';
+        appPill.innerHTML='<i></i> Not connected'; appPill.classList.remove('on');
+        document.getElementById('appSigninCard').style.display='';
+        document.getElementById('appAppsLogin').style.display='';
+        document.getElementById('appAccLogin').style.display='';
+        document.getElementById('appAccLogout').style.display='none';
+        document.getElementById('appAccName').textContent='Not signed in';
+        document.getElementById('appAccSub').textContent='Connect Google to get started';
       }
     }).catch(function(){});
   }
@@ -861,6 +1194,10 @@ body.in-app .dl,body.in-app .dl-link{display:none}
     remCount.textContent=items.length+' scheduled';
     remEmpty.style.display=items.length?'none':'';
     remList.style.display=items.length?'':'none';
+    appRemList.innerHTML='';
+    appRemCount.textContent=items.length+' scheduled';
+    appRemEmpty.style.display=items.length?'none':'';
+    appRemList.style.display=items.length?'':'none';
     if(!items.length) return;
     items.forEach(function(r){
       var li=document.createElement('li'); li.className='rem-item';
@@ -874,6 +1211,17 @@ body.in-app .dl,body.in-app .dl-link{display:none}
       });
       li.appendChild(txt); li.appendChild(del);
       remList.appendChild(li);
+      var ali=document.createElement('div'); ali.className='app-rem-item';
+      var atxt=el('div','rem-txt');
+      atxt.appendChild(el('b',null,r.title));
+      atxt.appendChild(el('span',null,fmtDate(r.when)+' · '+fmtTime(r.when)+' ('+relTime(r.when)+')'));
+      var adel=el('button','app-rem-del','×'); adel.type='button'; adel.title='Cancel reminder';
+      adel.addEventListener('click',function(){
+        fetch('/api/reminders?id='+encodeURIComponent(r.id),{method:'DELETE'})
+          .then(function(){ loadReminders(); });
+      });
+      ali.appendChild(atxt); ali.appendChild(adel);
+      appRemList.appendChild(ali);
     });
   }
   function loadReminders(){
@@ -904,20 +1252,52 @@ body.in-app .dl,body.in-app .dl-link{display:none}
   });
   document.getElementById('cronUrl').addEventListener('click',function(){ this.select(); });
 
+  // App switches: notifications reflect the real browser permission;
+  // email reminders show/hide this account's private cron link.
+  var appNotifSwitch=document.getElementById('appNotifSwitch');
+  var appEmailSwitch=document.getElementById('appEmailSwitch');
+  function syncNotifSwitch(){
+    appNotifSwitch.setAttribute('aria-checked',('Notification' in window&&Notification.permission==='granted')?'true':'false');
+  }
+  syncNotifSwitch();
+  appNotifSwitch.addEventListener('click',function(){
+    if(!('Notification' in window)){ showToast('Notifications are not supported in this browser.'); return; }
+    if(Notification.permission==='granted'){ showToast('Notifications are already on. To turn them off, change it in your phone Settings.'); return; }
+    Notification.requestPermission().then(function(p){
+      syncNotifSwitch();
+      showToast(p==='granted'?'Notifications enabled.':'Notifications not enabled.');
+    });
+  });
+  function setEmailSwitch(on){
+    appEmailSwitch.setAttribute('aria-checked',on?'true':'false');
+    try{ localStorage.setItem('wasipy_email_rem',on?'1':'0'); }catch(e){}
+    var box=document.getElementById('appCronBox');
+    if(!on){ box.classList.remove('show'); return; }
+    fetch('/api/cron/setup').then(function(r){return r.json();}).then(function(data){
+      if(data.cronUrl){ document.getElementById('appCronUrl').value=data.cronUrl; box.classList.add('show'); }
+    }).catch(function(){});
+  }
+  appEmailSwitch.addEventListener('click',function(){
+    setEmailSwitch(appEmailSwitch.getAttribute('aria-checked')!=='true');
+  });
+  document.getElementById('appCronUrl').addEventListener('click',function(){ this.select(); });
+
   function loadHistory(){
     fetch('/api/chat').then(function(r){ if(!r.ok) return null; return r.json(); }).then(function(data){
       if(!data||!data.messages||!data.messages.length) return;
-      chatLog.innerHTML='';
+      chatLog.innerHTML=''; appLog.innerHTML='';
       data.messages.forEach(function(m){ addMsg(m.content, m.role==='user'?'user':'agent', m.display||null); });
     }).catch(function(){});
   }
 
   function addConfirmCard(text, pending){
     var d=addMsg(text,'agent');
-    var extra=null, getDetails=null;
+    var appNode=d._app;
+    var extras=[];
     // Meetings: let the user add a description or guests on the card itself.
-    if(pending.tool==='create_calendar_event'){
-      extra=document.createElement('div');
+    function makeDetails(){
+      if(pending.tool!=='create_calendar_event') return null;
+      var extra=document.createElement('div');
       var tog=el('button','details-toggle','+ Add description or guests (optional)');
       tog.type='button';
       var form=el('div','details-form');
@@ -932,50 +1312,60 @@ body.in-app .dl,body.in-app .dl-link{display:none}
         tog.textContent=form.classList.contains('open')?'- Hide details':'+ Add description or guests (optional)';
       });
       extra.appendChild(tog); extra.appendChild(form);
-      d.appendChild(extra);
-      getDetails=function(){
-        return {
-          description:ta.value.trim(),
-          attendees:inp.value.split(',').map(function(s){return s.trim();}).filter(Boolean)
-        };
-      };
+      return {node:extra, get:function(){ return {description:ta.value.trim(), attendees:inp.value.split(',').map(function(s){return s.trim();}).filter(Boolean)}; }};
     }
-    var row=document.createElement('div'); row.className='confirm-row';
-    var yes=document.createElement('button'); yes.type='button'; yes.className='yes'; yes.textContent='Yes, do it';
-    var no=document.createElement('button'); no.type='button'; no.className='no'; no.textContent='No, cancel';
+    var detDesk=makeDetails(), detApp=makeDetails();
+    if(detDesk){ d.appendChild(detDesk.node); extras.push(detDesk.node); }
+    if(detApp&&appNode){ appNode.appendChild(detApp.node); extras.push(detApp.node); }
+    function getDetails(){
+      // Read the form the user can see (only one layout is visible).
+      var vis=(window.matchMedia&&window.matchMedia('(max-width:640px)').matches)?detApp:detDesk;
+      if(vis) return vis.get();
+      return {description:'', attendees:[]};
+    }
+    var rows=[];
     function doConfirm(confirm){
-      typing.classList.add('show');
+      showTyping(true);
       fetch('/api/actions/confirm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({actionId:pending.actionId,confirm:confirm})})
         .then(function(r){return r.json();})
         .then(function(data){
-          typing.classList.remove('show');
+          showTyping(false);
           addMsg(data.result||(confirm?'Done.':'Cancelled.'),'agent');
           loadActivity();
         })
-        .catch(function(){ typing.classList.remove('show'); addMsg('Something went wrong. Please try again.','agent'); });
+        .catch(function(){ showTyping(false); addMsg('Something went wrong. Please try again.','agent'); });
     }
     function answer(confirm){
-      row.remove(); if(extra)extra.remove();
-      if(confirm&&getDetails){
+      rows.forEach(function(r){ r.remove(); });
+      extras.forEach(function(x){ x.remove(); });
+      if(confirm&&(detDesk||detApp)){
         var det=getDetails();
         if(det.description||det.attendees.length){
-          typing.classList.add('show');
+          showTyping(true);
           fetch('/api/actions/update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({actionId:pending.actionId,args:{description:det.description,attendees:det.attendees}})})
             .then(function(r){return r.json();})
             .then(function(u){
-              typing.classList.remove('show');
+              showTyping(false);
               if(!u.ok){ addMsg(u.error||'Could not save the details. Please try again.','agent'); return; }
               doConfirm(true);
             })
-            .catch(function(){ typing.classList.remove('show'); addMsg('Something went wrong. Please try again.','agent'); });
+            .catch(function(){ showTyping(false); addMsg('Something went wrong. Please try again.','agent'); });
           return;
         }
       }
       doConfirm(confirm);
     }
-    yes.addEventListener('click',function(){ answer(true); });
-    no.addEventListener('click',function(){ answer(false); });
-    row.appendChild(yes); row.appendChild(no); d.appendChild(row); scrollChat();
+    function makeRow(parent){
+      var row=document.createElement('div'); row.className='confirm-row';
+      var yes=document.createElement('button'); yes.type='button'; yes.className='yes'; yes.textContent='Yes, do it';
+      var no=document.createElement('button'); no.type='button'; no.className='no'; no.textContent='No, cancel';
+      yes.addEventListener('click',function(){ answer(true); });
+      no.addEventListener('click',function(){ answer(false); });
+      row.appendChild(yes); row.appendChild(no); parent.appendChild(row); rows.push(row);
+    }
+    makeRow(d);
+    if(appNode) makeRow(appNode);
+    scrollChat();
   }
 
   function send(text){
@@ -985,40 +1375,56 @@ body.in-app .dl,body.in-app .dl-link{display:none}
       addMsg('Connect Google first using the button above — then I can work in your Calendar, Gmail, Drive, Sheets, and Docs. Until then, I can only chat.','agent');
       return;
     }
-    sending=true; addMsg(text,'user'); typing.classList.add('show');
+    sending=true; addMsg(text,'user'); showTyping(true);
     var tz='UTC';
     try{ tz=Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC'; }catch(e){}
     fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,timezone:tz})})
       .then(function(r){return r.json().then(function(d){ return {ok:r.ok,data:d}; });})
       .then(function(w){
-        typing.classList.remove('show'); sending=false;
+        showTyping(false); sending=false;
         if(!w.ok){ addMsg(w.data.error||'Something went wrong. Please try again.','agent'); return; }
         if(w.data.pendingAction){ addConfirmCard(w.data.reply, w.data.pendingAction); }
         else { addMsg(w.data.reply,'agent',w.data.display||null); }
         loadActivity(); loadReminders();
       })
-      .catch(function(){ typing.classList.remove('show'); sending=false; addMsg('Something went wrong. Please try again.','agent'); });
+      .catch(function(){ showTyping(false); sending=false; addMsg('Something went wrong. Please try again.','agent'); });
   }
 
-  connectBtn.addEventListener('click',function(){
+  function signIn(){
     if(isCapacitor){ mobileAuth('login'); return; }
     window.location.href='/api/auth/google?action=login';
-  });
-
-  disconnectBtn.addEventListener('click',function(){
+  }
+  function signOut(){
     fetch('/api/auth/logout',{method:'POST'}).then(function(){ window.location.reload(); });
-  });
+  }
+  connectBtn.addEventListener('click',signIn);
+  disconnectBtn.addEventListener('click',signOut);
+  document.getElementById('appChatLogin').addEventListener('click',signIn);
+  document.getElementById('appAppsLogin').addEventListener('click',signIn);
+  document.getElementById('appAccLogin').addEventListener('click',signIn);
+  document.getElementById('appAccLogout').addEventListener('click',signOut);
 
   // New chat: clears this chat's history (server + screen) and returns to
   // the home view — old failed turns can't confuse the agent any more.
-  newChatBtn.addEventListener('click',function(){
+  function newChat(){
     if(sending) return;
     fetch('/api/chat',{method:'DELETE'})
-      .then(function(){ chatLog.innerHTML=''; setChatting(false); })
+      .then(function(){ chatLog.innerHTML=''; appLog.innerHTML=''; setChatting(false); })
       .catch(function(){ addMsg('Could not clear the chat. Please try again.','agent'); });
-  });
+  }
+  newChatBtn.addEventListener('click',newChat);
+  document.getElementById('appNewChat').addEventListener('click',function(){ newChat(); switchTab('chat'); });
 
   form.addEventListener('submit',function(e){ e.preventDefault(); var v=input.value.trim(); if(!v)return; input.value=''; send(v); });
+  appForm.addEventListener('submit',function(e){ e.preventDefault(); var v=appInput.value.trim(); if(!v)return; appInput.value=''; send(v); });
+  document.querySelectorAll('#appShell .app-chip').forEach(function(chip){
+    chip.addEventListener('click',function(){ send(chip.getAttribute('data-prompt')); });
+  });
+  document.getElementById('appAskRemind').addEventListener('click',function(){
+    switchTab('chat');
+    appInput.value='Remind me ';
+    appInput.focus();
+  });
 
   // Celebration shown ONLY right after a service connects (?connected=...).
   function celebrateConnect(service){
@@ -1051,7 +1457,17 @@ body.in-app .dl,body.in-app .dl-link{display:none}
   if(params.get('signin')==='required'){ addMsg('Please sign in with Google first.','agent'); }
   if(params.toString()){ window.history.replaceState({},'',window.location.pathname); }
 
-  loadMe().then(function(){ if(signedIn){ loadHistory(); loadActivity(); loadReminders(); setInterval(loadReminders,60000); } if(justConnected) celebrateConnect(justConnected); });
+  loadMe().then(function(){
+    if(signedIn){
+      loadHistory(); loadActivity(); loadReminders(); setInterval(loadReminders,60000);
+      try{ if(localStorage.getItem('wasipy_email_rem')==='1') setEmailSwitch(true); }catch(e){}
+    }
+    if(justConnected){
+      celebrateConnect(justConnected);
+      // On a phone, land on the Apps tab so the new toggle is visible.
+      if(window.matchMedia&&window.matchMedia('(max-width:640px)').matches) switchTab('apps');
+    }
+  });
 })();
 </script>
 </body>

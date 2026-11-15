@@ -11,7 +11,7 @@ RES = os.path.join(ROOT, "android", "app", "src", "main", "res")
 # Brand colors from the official logo (Primary_logo.png):
 NAVY = (11, 27, 58)      # #0b1b3a — the rounded square
 ORANGE = (255, 176, 32)  # #ffb020 — the dot
-BG = (245, 245, 242)  # warm paper, matches the Wasipy site
+BG = (243, 246, 252)  # #F3F6FC, matches the app shell background
 
 # W polyline + dot in a 0-100 box (traced from the official logo)
 W_POINTS = [(22, 30), (36, 66), (50, 43), (64, 66), (78, 35)]
