@@ -299,6 +299,45 @@ body.chatting .chat-log{display:flex}
 
 @media(max-width:860px){.apps{grid-template-columns:repeat(2,1fr)}.foot{grid-template-columns:1fr}.drawer{width:100vw;border-radius:0}}
 @media(max-width:520px){.in{padding:0 18px 40px}.apps{grid-template-columns:1fr}.top{padding:16px 0}.ghost{font-size:14px;left:50px}.cmd input{font-size:16px}}
+
+/* ---- App-style layout on phones ---- */
+@media(max-width:640px){
+  html,body{overscroll-behavior:none}
+  body{-webkit-tap-highlight-color:transparent}
+  .w{min-height:100vh;min-height:100svh}
+  .in{padding:0 16px calc(40px + env(safe-area-inset-bottom))}
+  .top{position:sticky;top:0;z-index:20;padding-top:calc(12px + env(safe-area-inset-top));padding-bottom:12px;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+  .wm{font-size:18px}
+  .lg{width:30px;height:30px;border-radius:9px}
+  .rt{gap:8px}
+  .btn{padding:10px 14px;font-size:13px;border-radius:11px}
+  .pill{padding:6px 10px;font-size:12px}
+  .hero{padding:26px 0 18px}
+  h1{font-size:34px;letter-spacing:-.03em}
+  .sub{font-size:15px;margin-top:12px}
+  .card{border-radius:18px}
+  .cmd{padding:8px 8px 8px 16px;gap:10px}
+  .cmd input{font-size:16px}
+  .ghost{left:46px;font-size:15px}
+  .snd{width:42px;height:42px;border-radius:12px}
+  body.chatting .card{bottom:calc(10px + env(safe-area-inset-bottom))}
+  .steps{margin:26px 0 22px}
+  .st{font-size:12px}
+  .st u{width:28px;height:28px;font-size:12px;margin-bottom:8px}
+  .st b{font-size:13px}
+  .apps{grid-template-columns:repeat(2,1fr)}
+  .ap{padding:14px 13px}
+  .ap svg{margin-bottom:10px}
+  .ap b{font-size:15px}
+  .fc{padding:18px}
+  .dl{padding:18px}
+  .chat-log{padding:18px 0 6px;gap:18px}
+  .msg{font-size:15px}
+  .msg.user{max-width:88%}
+  .toast{bottom:calc(18px + env(safe-area-inset-bottom))}
+}
+/* Inside the Android app: no Download section — you're already in the app */
+body.in-app .dl,body.in-app .dl-link{display:none}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}h1 b,.ap,.card,.sub,.steps{opacity:1;filter:none;transform:none}}
 </style>
 </head>
@@ -426,6 +465,7 @@ body.chatting .chat-log{display:flex}
       .catch(function(){ addMsg('Could not reach Wasipy. Check your internet and try again.','agent'); });
   }
   if(isCapacitor){
+    document.body.classList.add('in-app');
     var AppPlugin = capPlugins().App;
     if(AppPlugin && AppPlugin.addListener){
       AppPlugin.addListener('appUrlOpen',function(ev){
