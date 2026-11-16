@@ -339,11 +339,10 @@ body.chatting .chat-log{display:flex}
 /* Inside the Android app: no Download section — you're already in the app */
 body.in-app .dl,body.in-app .dl-link{display:none}
 
-/* ---- Phone app shell (5-tab design) — phones only; desktop keeps the home design ---- */
+/* ---- Phone app shell (5-tab design) — inside the Android app ONLY. Browsers (PC or mobile) always show the website. ---- */
 .app{display:none}
-@media(max-width:640px){
-  .w{display:none}
-  .app{display:flex;position:fixed;inset:0;z-index:5;flex-direction:column;background:#F3F6FC;color:#0B1B3A;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;overflow:hidden}
+body.in-app .w{display:none}
+body.in-app .app{display:flex;position:fixed;inset:0;z-index:5;flex-direction:column;background:#F3F6FC;color:#0B1B3A;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;overflow:hidden}
   .app-top{display:flex;align-items:center;justify-content:space-between;padding:calc(16px + env(safe-area-inset-top)) 20px 12px;flex:none}
   .app-brand{display:flex;align-items:center;gap:10px;font:700 22px Sora,Inter,sans-serif;letter-spacing:-.02em}
   .app-pill{display:flex;align-items:center;gap:8px;height:32px;padding:0 12px;border-radius:16px;background:#FFF1D6;font-size:13px;font-weight:500;color:#5C3B00;white-space:nowrap}
@@ -437,7 +436,6 @@ body.in-app .dl,body.in-app .dl-link{display:none}
   .app-nav{display:flex;height:76px;padding-bottom:env(safe-area-inset-bottom);background:#fff;border-top:1px solid #DDE3F0;flex:none}
   .app-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:0;background:none;font:500 12px Inter;color:#4A5675;cursor:pointer;padding:0}
   .app-tab.on{font-weight:600;color:#1F4FD8}
-}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}h1 b,.ap,.card,.sub,.steps{opacity:1;filter:none;transform:none}}
 </style>
 </head>
@@ -1318,8 +1316,8 @@ body.in-app .dl,body.in-app .dl-link{display:none}
     if(detDesk){ d.appendChild(detDesk.node); extras.push(detDesk.node); }
     if(detApp&&appNode){ appNode.appendChild(detApp.node); extras.push(detApp.node); }
     function getDetails(){
-      // Read the form the user can see (only one layout is visible).
-      var vis=(window.matchMedia&&window.matchMedia('(max-width:640px)').matches)?detApp:detDesk;
+      // Read the form the user can see (app form inside the app, desktop form in a browser).
+      var vis=isCapacitor?detApp:detDesk;
       if(vis) return vis.get();
       return {description:'', attendees:[]};
     }
@@ -1464,8 +1462,8 @@ body.in-app .dl,body.in-app .dl-link{display:none}
     }
     if(justConnected){
       celebrateConnect(justConnected);
-      // On a phone, land on the Apps tab so the new toggle is visible.
-      if(window.matchMedia&&window.matchMedia('(max-width:640px)').matches) switchTab('apps');
+      // Inside the app, land on the Apps tab so the new toggle is visible.
+      if(isCapacitor) switchTab('apps');
     }
   });
 })();
