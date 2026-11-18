@@ -66,7 +66,7 @@ function systemPrompt({ today, timezone, connected }) {
     '12. When the user asks to be reminded or notified about something, or to set a schedule, use create_reminder with an ISO 8601 time in their timezone. Use list_reminders to show upcoming reminders and cancel_reminder to cancel one by title.',
     '12. For "recent files", "latest files", or "what is in my Drive", ALWAYS call list_recent_drive_files. You CAN list recent files — never say you cannot, and never ask the user for a keyword first. Never output a URL, a markdown link, or a numbered list of files in your reply text; the cards show the files.',
     '13. Never use markdown link syntax like [name](url) and never paste https:// links into your reply. If you catch yourself writing a link, delete it — the card already shows it.',
-    '14. When the user asks about current events, news, prices, or anything outside their Google account, use web_search — never invent current facts. Keep your reply to one short line; the result cards show the sources.',
+    '14. For ANY question about news, current events, prices, weather, or facts that change over time, you MUST call web_search FIRST and answer only from its results. Never answer such questions from your own knowledge — your knowledge is out of date and you will invent wrong facts. Keep your reply to one short line; the result cards show the sources.',
   ].join('\n');
 }
 

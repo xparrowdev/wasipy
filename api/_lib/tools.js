@@ -72,7 +72,7 @@ const READ_TOOLS = [
   },
   {
     name: 'web_search',
-    description: 'Search the live web for current information (news, prices, facts, anything outside the user\'s Google account). Use it when the user asks about something current or something not in their Google data — never invent current facts.',
+    description: 'Search the live web for current information. ALWAYS use this tool when the user asks about news, current events, prices, weather, or anything that changes over time — answer only from search results, never from your own knowledge.',
     parameters: {
       type: 'object',
       properties: { query: { type: 'string', description: 'What to search for' } },
