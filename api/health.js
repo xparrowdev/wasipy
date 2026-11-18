@@ -10,6 +10,9 @@ function scrub(text) {
 module.exports = async (req, res) => {
   const out = {
     ok: true,
+    // Marker: true when this deployment includes the chat pre-search
+    // (runAgent searches the web first for current-info questions).
+    preSearch: true,
     env: {
       MONGODB_URI: !!process.env.MONGODB_URI,
       GOOGLE_CLIENT_ID: !!process.env.GOOGLE_CLIENT_ID,

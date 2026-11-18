@@ -3,6 +3,7 @@
 // so the owner can see the exact Google error instead of the agent's guess.
 // Only works for the signed-in user, and only for their own account.
 // ?service=web runs a real Tavily web search (no Google service needed).
+// Add ?q=... to search for a specific query (default: 'latest international news').
 const { getSession } = require('./_lib/session');
 const { executeRead } = require('./_lib/tools');
 const { SERVICES } = require('./_lib/google');
@@ -32,7 +33,11 @@ module.exports = async (req, res) => {
       JSON.stringify({ ok: true, service, note: 'No probe for this service yet.' })
     );
   }
-  const result = await executeRead(session.userId, probe.tool, probe.args);
+  const args = { ...probe.args };
+  if (service === 'web' && typeof req.query.q === 'string' && req.query.q.trim()) {
+    args.query = req.query.q.trim().slice(0, 500);
+  }
+  const result = await executeRead(session.userId, probe.tool, args);
   const failed = typeof result === 'string' && result.startsWith('ERROR');
   res.statusCode = failed ? 500 : 200;
   res.end(
@@ -40,6 +45,7 @@ module.exports = async (req, res) => {
       ok: !failed,
       service,
       tool: probe.tool,
+      query: args.query,
       result: String(result).slice(0, 1000),
     })
   );
