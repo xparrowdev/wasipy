@@ -35,6 +35,20 @@ function stripLinks(text) {
     .trim();
 }
 
+// The model sometimes answers current-info questions (news, prices,
+// weather) from its own knowledge instead of calling web_search —
+// three live tests confirmed it, even with an explicit instruction
+// to search. So for questions that clearly need live info, search
+// FIRST in runAgent and hand the model the results. Never triggers
+// for questions about the user's own Google data (email, calendar,
+// files, sheets, docs).
+function needsLiveInfo(text) {
+  const t = (text || '').toLowerCase();
+  if (/\b(emails?|mail|inbox|calendars?|meetings?|events?|schedules?|drive|files?|folders?|sheets?|spreadsheets?|docs?|documents?)\b/.test(t)) return false;
+  if (/\b(search (the )?web|google it|look (it )?up online|find online|browse (the )?web)\b/.test(t)) return true;
+  return /\b(news|headlines?|breaking|weather|forecast|rain|temperature|prices?|stocks?|crypto|bitcoin|scores?|who won|elections?|latest|current|today's|happening|trending)\b/.test(t);
+}
+
 function systemPrompt({ today, timezone, connected }) {
   const LABELS = { calendar: 'Calendar', gmail: 'Gmail', drive: 'Drive', sheets: 'Sheets', docs: 'Docs' };
   const ALL = ['calendar', 'gmail', 'drive', 'sheets', 'docs'];
@@ -66,7 +80,7 @@ function systemPrompt({ today, timezone, connected }) {
     '12. When the user asks to be reminded or notified about something, or to set a schedule, use create_reminder with an ISO 8601 time in their timezone. Use list_reminders to show upcoming reminders and cancel_reminder to cancel one by title.',
     '12. For "recent files", "latest files", or "what is in my Drive", ALWAYS call list_recent_drive_files. You CAN list recent files — never say you cannot, and never ask the user for a keyword first. Never output a URL, a markdown link, or a numbered list of files in your reply text; the cards show the files.',
     '13. Never use markdown link syntax like [name](url) and never paste https:// links into your reply. If you catch yourself writing a link, delete it — the card already shows it.',
-    '14. For ANY question about news, current events, prices, weather, or facts that change over time, you MUST call web_search FIRST and answer only from its results. Never answer such questions from your own knowledge — your knowledge is out of date and you will invent wrong facts. Keep your reply to one short line; the result cards show the sources.',
+    '14. For ANY question about news, current events, prices, weather, or facts that change over time, you MUST call web_search FIRST and answer only from its results. Never answer such questions from your own knowledge — your knowledge is out of date and you will invent wrong facts. If live web search results are already given in these instructions, answer from them — do not search again. Keep your reply to one short line; the result cards show the sources.',
   ].join('\n');
 }
 
@@ -121,11 +135,15 @@ function pendingReply(pending) {
 
 // ---------------- Gemini ----------------
 
-async function runGemini({ userId, userMessage, history, timezone, today, connectedServices }) {
+async function runGemini({ userId, userMessage, history, timezone, today, connectedServices, preSearch }) {
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  let sysPrompt = systemPrompt({ today, timezone, connected: connectedServices });
+  if (preSearch && preSearch.display) {
+    sysPrompt += `\n\nLive web search results for the user's question (answer ONLY from these for current facts — never add facts from your own knowledge):\n${preSearch.text}`;
+  }
   const model = genAI.getGenerativeModel({
     model: GEMINI_MODEL,
-    systemInstruction: systemPrompt({ today, timezone, connected: connectedServices }),
+    systemInstruction: sysPrompt,
     tools: [
       {
         functionDeclarations: ALL_TOOLS.map((t) => ({
@@ -145,7 +163,7 @@ async function runGemini({ userId, userMessage, history, timezone, today, connec
     }));
   const chat = model.startChat({ history: geminiHistory });
 
-  let lastDisplay = null;
+  let lastDisplay = preSearch && preSearch.display ? preSearch.display : null;
   let result = await chat.sendMessage(userMessage);
   for (let turn = 0; turn < MAX_TURNS; turn++) {
     const calls = result.response.functionCalls() || [];
@@ -179,10 +197,14 @@ async function runGemini({ userId, userMessage, history, timezone, today, connec
 
 // ---------------- OpenAI ----------------
 
-async function runOpenAI({ userId, userMessage, history, timezone, today, connectedServices }) {
+async function runOpenAI({ userId, userMessage, history, timezone, today, connectedServices, preSearch }) {
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  let sysPrompt = systemPrompt({ today, timezone, connected: connectedServices });
+  if (preSearch && preSearch.display) {
+    sysPrompt += `\n\nLive web search results for the user's question (answer ONLY from these for current facts — never add facts from your own knowledge):\n${preSearch.text}`;
+  }
   const messages = [
-    { role: 'system', content: systemPrompt({ today, timezone, connected: connectedServices }) },
+    { role: 'system', content: sysPrompt },
     ...(history || [])
       .slice(-20)
       .map((m) => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: stripLinks(m.content) })),
@@ -193,7 +215,7 @@ async function runOpenAI({ userId, userMessage, history, timezone, today, connec
     function: { name: t.name, description: t.description, parameters: t.parameters },
   }));
 
-  let lastDisplay = null;
+  let lastDisplay = preSearch && preSearch.display ? preSearch.display : null;
   for (let turn = 0; turn < MAX_TURNS; turn++) {
     const res = await client.chat.completions.create({
       model: OPENAI_MODEL,
@@ -248,7 +270,20 @@ async function runAgent({ userId, userMessage, history, timezone, connectedServi
     day: 'numeric',
     timeZone: timezone || 'UTC',
   });
-  const common = { userId, userMessage, history, timezone: timezone || 'UTC', today, connectedServices: connectedServices || [] };
+  // Deterministic pre-search: for questions that clearly need live info,
+  // search first and hand the results to the model (see needsLiveInfo).
+  // Only accepted when real results came back (a display payload exists);
+  // otherwise the model keeps its normal behaviour.
+  let preSearch = null;
+  if (needsLiveInfo(userMessage)) {
+    try {
+      const out = await executeReadRich(userId, 'web_search', { query: userMessage });
+      if (out && out.display) preSearch = out;
+    } catch (e) {
+      console.error('pre-search failed', e);
+    }
+  }
+  const common = { userId, userMessage, history, timezone: timezone || 'UTC', today, connectedServices: connectedServices || [], preSearch };
   try {
     const out = provider === 'gemini' ? await runGemini(common) : await runOpenAI(common);
     return out;
