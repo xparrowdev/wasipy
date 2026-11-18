@@ -70,6 +70,15 @@ const READ_TOOLS = [
       required: ['documentName'],
     },
   },
+  {
+    name: 'web_search',
+    description: 'Search the live web for current information (news, prices, facts, anything outside the user\'s Google account). Use it when the user asks about something current or something not in their Google data — never invent current facts.',
+    parameters: {
+      type: 'object',
+      properties: { query: { type: 'string', description: 'What to search for' } },
+      required: ['query'],
+    },
+  },
 ];
 
 const WRITE_TOOLS = [
@@ -372,6 +381,51 @@ async function readDoc(userId, args) {
   };
 }
 
+// Web search via Tavily (a search API built for AI agents). Needs the
+// TAVILY_API_KEY env var (free tier: 1,000 searches/month, no card).
+// search_depth is pinned to 'basic' (1 credit per search) — Tavily's auto
+// mode can silently pick 'advanced' (2 credits).
+async function webSearch(userId, args) {
+  const key = process.env.TAVILY_API_KEY;
+  if (!key) {
+    return { text: 'Web search is not set up yet. The site owner needs to add a TAVILY_API_KEY (free from tavily.com) in the Vercel dashboard, then redeploy.', display: null };
+  }
+  const query = String(args.query || '').trim();
+  if (!query) return { text: 'I need something to search for.', display: null };
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 10000);
+  let res;
+  try {
+    res = await fetch('https://api.tavily.com/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+      body: JSON.stringify({ query, search_depth: 'basic', max_results: 5, include_answer: false }),
+      signal: ctrl.signal,
+    });
+  } catch (e) {
+    clearTimeout(timer);
+    return { text: 'ERROR: web search failed: could not reach the search service.', display: null };
+  }
+  clearTimeout(timer);
+  if (!res.ok) {
+    if (res.status === 401) return { text: 'ERROR: web search failed: the Tavily API key is invalid.', display: null };
+    if (res.status === 429) return { text: 'ERROR: web search failed: search limit reached for now. Please try again later.', display: null };
+    return { text: `ERROR: web search failed (status ${res.status}).`, display: null };
+  }
+  const data = await res.json();
+  const results = (data.results || []).slice(0, 5);
+  if (!results.length) return { text: `No web results for "${query}".`, display: null };
+  const items = results.map((r) => ({
+    title: r.title || '',
+    url: r.url || '',
+    snippet: String(r.content || '').slice(0, 200),
+  }));
+  const text = results
+    .map((r, i) => `${i + 1}. ${r.title || ''}\n${String(r.content || '').slice(0, 500)}`)
+    .join('\n\n');
+  return { text, display: { kind: 'search', items } };
+}
+
 const READ_EXECUTORS = {
   list_calendar_events: listCalendarEvents,
   list_recent_emails: listRecentEmails,
@@ -380,6 +434,7 @@ const READ_EXECUTORS = {
   search_drive_files: searchDriveFiles,
   read_sheet: readSheet,
   read_doc: readDoc,
+  web_search: webSearch,
 };
 
 async function executeReadRich(userId, toolName, args) {

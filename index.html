@@ -238,6 +238,7 @@ body.chatting .chat-log{display:flex}
 .mail-subj{font-weight:600;font-size:14.5px;line-height:1.35}
 .mail-from{color:var(--mute);font-size:13px;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mail-date{color:var(--faint);font-size:12px;margin-top:1px}
+.search-snippet{font-size:13.5px;color:var(--mute);line-height:1.5;margin-top:4px}
 .evt-card{display:flex;gap:12px;align-items:center}
 .evt-when{flex:none;text-align:center;background:var(--bubble);border-radius:10px;padding:6px 10px;min-width:58px}
 .evt-when b{display:block;font-size:15px}
@@ -1012,6 +1013,21 @@ body.in-app .app{display:flex;position:fixed;inset:0;z-index:5;flex-direction:co
       dc.appendChild(el('h4',null,display.name||'Document'));
       dc.appendChild(el('div',null,display.text||''));
       wrap.appendChild(dc);
+    } else if(display.kind==='search'&&(display.items||[]).length){
+      display.items.forEach(function(s,i){
+        var card=el('div','rcard search-card click');
+        card.style.animationDelay=(i*60)+'ms';
+        var main=el('div','mail-main');
+        main.appendChild(el('div','mail-subj',s.title));
+        var host='';
+        try{ host=new URL(s.url).hostname.replace(/^www\./,''); }catch(e){}
+        if(host) main.appendChild(el('div','mail-from',host));
+        if(s.snippet) main.appendChild(el('div','search-snippet',s.snippet));
+        card.appendChild(main);
+        card.appendChild(el('span','file-open','↗'));
+        card.addEventListener('click',function(){ window.open(safeUrl(s.url),'_blank','noopener'); });
+        wrap.appendChild(card);
+      });
     } else {
       return;
     }
