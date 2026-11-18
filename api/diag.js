@@ -2,6 +2,7 @@
 // Runs a tiny real read against that service and returns the raw outcome,
 // so the owner can see the exact Google error instead of the agent's guess.
 // Only works for the signed-in user, and only for their own account.
+// ?service=web runs a real Tavily web search (no Google service needed).
 const { getSession } = require('./_lib/session');
 const { executeRead } = require('./_lib/tools');
 const { SERVICES } = require('./_lib/google');
@@ -10,6 +11,7 @@ const PROBES = {
   gmail: { tool: 'list_recent_emails', args: { count: 1 } },
   calendar: { tool: 'list_calendar_events', args: { days: 1 } },
   drive: { tool: 'search_drive_files', args: { query: 'a' } },
+  web: { tool: 'web_search', args: { query: 'latest international news' } },
 };
 
 module.exports = async (req, res) => {
@@ -20,7 +22,7 @@ module.exports = async (req, res) => {
     return res.end(JSON.stringify({ ok: false, error: 'Not signed in' }));
   }
   const service = req.query.service;
-  if (!SERVICES[service]) {
+  if (!SERVICES[service] && service !== 'web') {
     res.statusCode = 400;
     return res.end(JSON.stringify({ ok: false, error: `Unknown service: ${service}` }));
   }
