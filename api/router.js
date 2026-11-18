@@ -19,6 +19,7 @@ const routes = {
   'desktop-exchange': require('./_lib/routes/desktop-exchange'),
   'mobile-url': require('./_lib/routes/mobile-url'),
   'mobile-exchange': require('./_lib/routes/mobile-exchange'),
+  'calendar-upcoming': require('./_lib/routes/calendar-upcoming'),
 };
 
 module.exports = async (req, res) => {

@@ -301,6 +301,48 @@ body.chatting .chat-log{display:flex}
 .confetti{position:absolute;top:-16px;border-radius:2px;animation-name:confFall;animation-timing-function:cubic-bezier(.3,.6,.6,1);animation-fill-mode:forwards}
 @keyframes confFall{to{transform:translateY(108vh) rotate(720deg);opacity:0}}
 
+/* ---- Agent workspace: 3-column layout after sign-in ---- */
+.ws{display:none}
+body.workspace .w{min-height:100vh}
+body.workspace .in{max-width:1480px;display:flex;flex-direction:column;min-height:100vh;padding-bottom:16px}
+body.workspace .hero,body.workspace .steps,body.workspace .lab,body.workspace .apps,body.workspace .foot,body.workspace .dl,body.workspace .fine-note,body.workspace .site-foot,body.workspace .dl-link{display:none}
+body.workspace .top{padding:18px 0 14px}
+body.workspace .ws{display:grid;grid-template-columns:280px minmax(0,1fr) 250px;gap:14px;flex:1;min-height:0}
+.ws-left{display:flex;flex-direction:column;gap:14px;overflow-y:auto;min-height:0;padding-bottom:4px;scrollbar-width:thin}
+.ws-center{display:flex;flex-direction:column;min-width:0;min-height:0}
+.ws-right{overflow-y:auto;min-height:0;padding-bottom:4px;scrollbar-width:thin}
+body.workspace .chat-log{display:none;flex:1;min-height:0;overflow-y:auto;padding:10px 6px}
+body.workspace.chatting .chat-log{display:flex}
+body.workspace .card{position:static}
+.ws-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px 16px;animation:up .7s .2s both}
+.ws-empty h2{font:800 30px/1.15 Manrope,Inter,sans-serif;letter-spacing:-.03em}
+.ws-empty p{margin:10px auto 0;max-width:340px;font-size:15px;color:var(--mute);line-height:1.55}
+body.chatting .ws-empty{display:none}
+/* Up next — the coming schedule, so nothing is forgotten */
+#upNextList{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.up-item{display:flex;gap:10px;align-items:baseline;min-width:0}
+.up-time{flex:none;font:700 13px Inter;color:var(--ink);background:var(--bubble);border-radius:8px;padding:3px 8px}
+.up-title{font-size:13.5px;font-weight:600;line-height:1.35;min-width:0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+/* Right panel — the 5 apps, compact */
+.ws-apps{display:flex;flex-direction:column;gap:10px}
+.ws-app{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:11px 12px;transition:transform .2s var(--ease),box-shadow .2s}
+.ws-app:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.ws-app>svg{flex:none;width:30px;height:30px}
+.ws-app-tx{flex:1;min-width:0}
+.ws-app-tx b{display:block;font:700 14px Manrope}
+.ws-app-tx span{display:block;font-size:11.5px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ws-app button{flex:none;padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:var(--card-soft);font:600 12px Inter;color:var(--ink);cursor:pointer;transition:background .2s,color .2s,border-color .2s}
+.ws-app button:hover{background:var(--ink);color:#fff;border-color:var(--ink)}
+.ws-app button.off{color:var(--red)}
+.ws-app button.off:hover{background:var(--red);border-color:var(--red);color:#fff}
+@media(max-width:1023px){
+  body.workspace .in{min-height:0}
+  body.workspace .ws{grid-template-columns:1fr;flex:none}
+  body.workspace.chatting .chat-log{flex:none;max-height:55vh}
+  .ws-center{order:-1}
+  .ws-left,.ws-right{overflow:visible}
+}
+
 @media(max-width:860px){.apps{grid-template-columns:repeat(2,1fr)}.foot{grid-template-columns:1fr}.drawer{width:100vw;border-radius:0}}
 @media(max-width:520px){.in{padding:0 18px 40px}.apps{grid-template-columns:1fr}.top{padding:16px 0}.ghost{font-size:14px;left:50px}.cmd input{font-size:16px}}
 
@@ -457,6 +499,26 @@ body.in-app .app{display:flex;position:fixed;inset:0;z-index:5;flex-direction:co
     </div>
   </header>
 
+  <!-- Agent workspace: 3 columns after sign-in. The reminders + activity
+       panels and the chat move into it (see enterWorkspace in the script);
+       the home view below stays for signed-out visitors. -->
+  <div class="ws" id="workspace">
+    <aside class="ws-left" id="wsLeft">
+      <div class="fc">
+        <div class="fh"><h3>Up next</h3><span class="bd" id="upNextCount">Today</span></div>
+        <div class="empty" id="upNextEmpty" style="padding:10px 0 4px"><b id="upNextEmptyText">No upcoming events</b></div>
+        <ul id="upNextList" style="display:none"></ul>
+      </div>
+    </aside>
+    <div class="ws-center" id="wsCenter">
+      <div class="ws-empty" id="wsEmpty"><h2>What should I do?</h2><p>Ask in plain words. I work inside your own Google account.</p></div>
+    </div>
+    <aside class="ws-right" id="wsRight">
+      <div class="lab">Your apps</div>
+      <div class="ws-apps" id="wsApps"></div>
+    </aside>
+  </div>
+
   <div class="hero" id="hero">
     <h1><b>Your</b><b>Google</b><b>apps,</b><br><b class="g">on command.</b></h1>
     <p class="sub">Connect Google once, then just tell me what you need. I’ll book it, find it, log it and write it — right inside your own account.</p>
@@ -483,7 +545,7 @@ body.in-app .app{display:flex;position:fixed;inset:0;z-index:5;flex-direction:co
 
   <svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="ck" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"></path></symbol><symbol id="x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"></path></symbol><symbol id="us" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 4-6 8-6s8 2 8 6"></path></symbol><symbol id="cl" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"></rect><path d="M8 3v4M16 3v4M3 10h18"></path></symbol></svg>
   <div class="foot">
-    <div class="fc">
+    <div class="fc" id="remPanel">
       <div class="fh"><h3>Reminders</h3><span class="bd" id="remCount">0 scheduled</span></div>
       <div class="empty" id="remEmpty"><div class="bell"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 17v-6a6 6 0 1112 0v6l1.5 2h-15z"></path><path d="M10 21a2 2 0 004 0"></path></svg></div><b>Nothing scheduled yet</b>Ask me to remind you about anything.</div>
       <ul id="remList" style="display:none"></ul>
@@ -493,7 +555,7 @@ body.in-app .app{display:flex;position:fixed;inset:0;z-index:5;flex-direction:co
         <input id="cronUrl" readonly>
       </div>
     </div>
-    <div class="fc">
+    <div class="fc" id="actPanel">
       <div class="fh"><h3>Activity</h3><span class="bd"><i class="lv"></i>Live</span></div>
       <ul class="feed" id="actionLog">
         <li class="ev si" style="--i:0"><i><svg><use href="#us"></use></svg></i><span><b>Agent ready</b><em>Sign in with Google to begin.</em></span></li>
@@ -507,8 +569,8 @@ body.in-app .app{display:flex;position:fixed;inset:0;z-index:5;flex-direction:co
     <p>Use Wasipy as an app on your computer or phone. It always opens the latest version.</p>
     <div class="dl-row">
       <div class="dl-ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1"></rect><rect x="13" y="3" width="8" height="8" rx="1"></rect><rect x="3" y="13" width="8" height="8" rx="1"></rect><rect x="13" y="13" width="8" height="8" rx="1"></rect></svg></div>
-      <div><b>Windows</b><span>64-bit · Setup 1.0.1 · 84 MB</span></div>
-      <a href="https://github.com/xparrowdev/wasipy/releases/download/desktop-latest/Wasipy-Setup-1.0.1-x64.exe">Download</a>
+      <div><b>Windows</b><span>64-bit · Setup 1.0.2 · 84 MB</span></div>
+      <a href="https://github.com/xparrowdev/wasipy/releases/download/desktop-latest/Wasipy-Setup-1.0.2-x64.exe">Download</a>
     </div>
     <div class="dl-row">
       <div class="dl-ic"><svg viewBox="0 0 24 24"><path d="M7 10h10v8a2 2 0 01-2 2H9a2 2 0 01-2-2z"></path><path d="M7 10a5 5 0 0110 0"></path><path d="M9.5 4.5L10.5 6M14.5 4.5L13.5 6"></path><circle cx="10" cy="13" r=".9" fill="currentColor" stroke="none"></circle><circle cx="14" cy="13" r=".9" fill="currentColor" stroke="none"></circle></svg></div>
@@ -734,6 +796,25 @@ body.in-app .app{display:flex;position:fixed;inset:0;z-index:5;flex-direction:co
   // Home view vs chat view: the hero + steps fold away once a real
   // conversation exists (body.chatting), and come back on New chat.
   function setChatting(on){ document.body.classList.toggle('chatting',!!on); appShell.classList.toggle('app-chatting',!!on); }
+
+  // Agent workspace: after sign-in the page becomes 3 columns — reminders
+  // + activity on the left, chat in the middle, apps on the right. The
+  // panels and the chat are moved (not copied) into the workspace, so all
+  // existing rendering keeps working. Sign-in/out always reload the page,
+  // so the move only ever runs once, on load. Never in the Android app —
+  // it has its own 5-tab shell.
+  var wsLeft=document.getElementById('wsLeft'), wsCenter=document.getElementById('wsCenter');
+  var wsApps=document.getElementById('wsApps');
+  var workspaceOn=false;
+  function enterWorkspace(){
+    if(workspaceOn||isCapacitor)return; workspaceOn=true;
+    document.body.classList.add('workspace');
+    wsLeft.appendChild(document.getElementById('remPanel'));
+    wsLeft.appendChild(document.getElementById('actPanel'));
+    wsCenter.appendChild(chatLog);
+    wsCenter.appendChild(typing);
+    wsCenter.appendChild(form);
+  }
 
   // App cards — order matters: the design's icon animations target each
   // card by position (Calendar 1, Gmail 2, Drive 3, Sheets 4, Docs 5).
@@ -1056,6 +1137,7 @@ body.in-app .app{display:flex;position:fixed;inset:0;z-index:5;flex-direction:co
       appsGrid.appendChild(card);
     });
     renderAppServices(connections);
+    renderWsApps(connections);
   }
 
   // App view: same 5 services, in the design's order, with toggle switches.
@@ -1083,6 +1165,22 @@ body.in-app .app{display:flex;position:fixed;inset:0;z-index:5;flex-direction:co
     });
   }
 
+  // Workspace: same 5 services as compact rows on the right.
+  function renderWsApps(connections){
+    var map={}; (connections||[]).forEach(function(c){ map[c.service]=c; });
+    wsApps.innerHTML='';
+    SERVICES.forEach(function(s){
+      var c=map[s.id];
+      var row=document.createElement('div'); row.className='ws-app';
+      row.innerHTML=s.svg+'<div class="ws-app-tx"><b>'+esc(s.label)+'</b><span>'+esc(c?(c.email||'Connected'):'Not connected')+'</span></div>';
+      var btn=document.createElement('button');
+      btn.type='button'; btn.className=c?'off':''; btn.setAttribute('data-svc',s.id); btn.setAttribute('data-on',c?'1':'0');
+      btn.textContent=c?'Disconnect':'Connect';
+      row.appendChild(btn);
+      wsApps.appendChild(row);
+    });
+  }
+
   appServicesEl.addEventListener('click',function(e){
     var b=e.target.closest('[data-svc]'); if(!b)return;
     var svc=b.getAttribute('data-svc'), on=b.getAttribute('data-on')==='1';
@@ -1100,6 +1198,22 @@ body.in-app .app{display:flex;position:fixed;inset:0;z-index:5;flex-direction:co
   });
 
   appsGrid.addEventListener('click',function(e){
+    var b=e.target.closest('[data-svc]'); if(!b)return;
+    var svc=b.getAttribute('data-svc'), on=b.getAttribute('data-on')==='1';
+    if(!signedIn){ addMsg('Sign in with Google first, then you can connect '+svc+'.','agent'); return; }
+    if(on){
+      b.disabled=true;
+      fetch('/api/connections?service='+encodeURIComponent(svc),{method:'DELETE'})
+        .then(function(r){ if(!r.ok) throw new Error('disconnect failed'); return r.json(); })
+        .then(function(){ loadMe(); loadActivity(); addLog('Disconnected '+svc); })
+        .catch(function(){ b.disabled=false; addMsg('Could not disconnect '+svc+'. Please try again.','agent'); });
+    } else {
+      if(isCapacitor){ mobileAuth('connect',svc); return; }
+      window.location.href='/api/auth/google?action=connect&service='+encodeURIComponent(svc);
+    }
+  });
+
+  wsApps.addEventListener('click',function(e){
     var b=e.target.closest('[data-svc]'); if(!b)return;
     var svc=b.getAttribute('data-svc'), on=b.getAttribute('data-on')==='1';
     if(!signedIn){ addMsg('Sign in with Google first, then you can connect '+svc+'.','agent'); return; }
@@ -1240,6 +1354,42 @@ body.in-app .app{display:flex;position:fixed;inset:0;z-index:5;flex-direction:co
         showToast('Reminder: '+r.title, r.note||('Due '+fmtTime(r.when)));
         if('Notification' in window&&Notification.permission==='granted'){
           try{ new Notification('Reminder: '+r.title,{body:r.note||'Wasipy reminder'}); }catch(e){}
+        }
+      });
+    }).catch(function(){});
+  }
+  // ---------- upcoming schedule: "Up next" panel + proactive alerts ----------
+  // The server claims each alert once (see /api/calendar/upcoming), so the
+  // website and the desktop app can both poll without notifying twice.
+  var upNextList=document.getElementById('upNextList');
+  var upNextEmpty=document.getElementById('upNextEmpty');
+  var upNextEmptyText=document.getElementById('upNextEmptyText');
+  var upNextCount=document.getElementById('upNextCount');
+  function renderUpNext(events,connected){
+    upNextList.innerHTML='';
+    upNextCount.textContent=events.length?events.length+' upcoming':'Today';
+    upNextEmptyText.textContent=connected?'No upcoming events':'Connect Calendar to see what is next.';
+    upNextEmpty.style.display=events.length?'none':'';
+    upNextList.style.display=events.length?'':'none';
+    events.slice(0,3).forEach(function(e){
+      var li=document.createElement('li'); li.className='up-item';
+      li.appendChild(el('span','up-time',fmtTime(e.start)));
+      li.appendChild(el('div','up-title',e.title));
+      upNextList.appendChild(li);
+    });
+  }
+  function loadUpcoming(){
+    if(!signedIn)return;
+    fetch('/api/calendar/upcoming').then(function(r){return r.json();}).then(function(data){
+      if(!data||!data.ok)return;
+      renderUpNext(data.events||[],!!data.connected);
+      (data.notify||[]).forEach(function(n){
+        var mins=Math.max(0,Math.round((new Date(n.start).getTime()-Date.now())/60000));
+        var msg=mins<=1?('Starting now: '+n.title):('Starting in '+mins+' minutes: '+n.title);
+        playNotifSound();
+        showToast(msg,'Calendar · '+fmtTime(n.start));
+        if('Notification' in window&&Notification.permission==='granted'){
+          try{ new Notification(msg,{body:'Wasipy · Calendar'}); }catch(e){}
         }
       });
     }).catch(function(){});
@@ -1466,7 +1616,9 @@ body.in-app .app{display:flex;position:fixed;inset:0;z-index:5;flex-direction:co
 
   loadMe().then(function(){
     if(signedIn){
-      loadHistory(); loadActivity(); loadReminders(); setInterval(loadReminders,60000);
+      enterWorkspace();
+      loadHistory(); loadActivity(); loadReminders(); loadUpcoming();
+      setInterval(function(){ loadReminders(); loadUpcoming(); },60000);
       try{ if(localStorage.getItem('wasipy_email_rem')==='1') setEmailSwitch(true); }catch(e){}
     }
     if(justConnected){

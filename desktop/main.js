@@ -18,6 +18,7 @@ const http = require('node:http');
 
 const SITE_URL = 'https://wasipy.vercel.app/';
 const REMINDERS_URL = 'https://wasipy.vercel.app/api/reminders';
+const CALENDAR_URL = 'https://wasipy.vercel.app/api/calendar/upcoming';
 // Plain Chrome user agent (no Electron token) so Google sign-in works.
 const CHROME_UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
@@ -308,6 +309,7 @@ function createTray() {
   const menu = Menu.buildFromTemplate([
     { label: 'Open Wasipy', click: showWindow },
     { label: 'Check reminders now', click: () => pollReminders() },
+    { label: 'Check schedule now', click: () => pollCalendar() },
     { type: 'separator' },
     {
       label: 'Quit Wasipy',
@@ -341,6 +343,29 @@ async function pollReminders() {
   }
 }
 
+// Check for calendar events starting soon using the signed-in session's
+// cookies, and fire a native Windows notification for each one. The server
+// claims each alert once (see /api/calendar/upcoming), so this and the
+// in-page check never notify twice. Quietly does nothing when the user is
+// not signed in yet or the computer is offline.
+async function pollCalendar() {
+  try {
+    const res = await net.fetch(CALENDAR_URL, { method: 'GET' });
+    if (!res.ok) return;
+    const data = await res.json();
+    for (const n of data.notify || []) {
+      const mins = Math.max(0, Math.round((new Date(n.start).getTime() - Date.now()) / 60000));
+      new Notification({
+        title: mins <= 1 ? `Starting now: ${n.title}` : `Starting in ${mins} minutes: ${n.title}`,
+        body: 'Wasipy · Calendar',
+        icon: path.join(__dirname, 'build', 'icon.png'),
+      }).show();
+    }
+  } catch {
+    // Offline — the next poll will retry.
+  }
+}
+
 app.whenReady().then(() => {
   // Start Wasipy automatically when Windows starts (user can turn this off
   // in Windows Settings > Apps > Startup).
@@ -350,6 +375,9 @@ app.whenReady().then(() => {
   // First reminder check after 30 seconds, then every minute.
   setTimeout(pollReminders, 30 * 1000);
   setInterval(pollReminders, POLL_MS);
+  // First schedule check after 45 seconds, then every minute.
+  setTimeout(pollCalendar, 45 * 1000);
+  setInterval(pollCalendar, POLL_MS);
 });
 
 // Keep running in the tray when all windows are closed (Windows behaviour
