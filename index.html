@@ -320,7 +320,7 @@ body.chatting .chat-log{display:flex}
 /* ---- Agent workspace: 3-column layout after sign-in ---- */
 .ws{display:none}
 body.workspace .w{min-height:100vh}
-body.workspace .in{max-width:1480px;display:flex;flex-direction:column;min-height:100vh;padding-bottom:16px}
+body.workspace .in{max-width:1480px;display:flex;flex-direction:column;height:100vh;height:100dvh;padding-bottom:16px}
 body.workspace .hero,body.workspace .steps,body.workspace .lab,body.workspace .apps,body.workspace .foot,body.workspace .dl,body.workspace .fine-note,body.workspace .site-foot,body.workspace .dl-link{display:none}
 body.workspace .top{padding:18px 0 14px}
 body.workspace .ws{display:grid;grid-template-columns:280px minmax(0,1fr) 250px;gap:14px;flex:1;min-height:0}
@@ -352,7 +352,7 @@ body.chatting .ws-empty{display:none}
 .ws-app button.off{color:var(--red)}
 .ws-app button.off:hover{background:var(--red);border-color:var(--red);color:#fff}
 @media(max-width:1023px){
-  body.workspace .in{min-height:0}
+  body.workspace .in{min-height:0;height:auto}
   body.workspace .ws{grid-template-columns:1fr;flex:none}
   body.workspace.chatting .chat-log{flex:none;max-height:55vh}
   .ws-center{order:-1}
