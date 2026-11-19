@@ -859,10 +859,33 @@ body.in-app .app{display:flex;position:fixed;inset:0;z-index:5;flex-direction:co
     {id:'docs',label:'Docs',color:'#4285f4',svg:'<svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><rect x="8" y="4" width="24" height="32" rx="5" fill="#4285f4"></rect><path d="M13 16h14M13 22h14M13 28h8" stroke="#fff" stroke-width="2.4" stroke-linecap="round"></path></svg>'}
   ];
 
-  function scrollChat(){
-    var last=chatLog.lastElementChild; if(last) last.scrollIntoView({behavior:'smooth',block:'nearest'});
-    var alast=appLog.lastElementChild; if(alast) alast.scrollIntoView({behavior:'smooth',block:'nearest'});
+  // Auto-scroll to the newest message. Each view scrolls a different box,
+  // so scroll that box to its bottom — never scrollIntoView 'nearest',
+  // which stops as soon as the message is partly visible and leaves it
+  // half-hidden (the user then has to drag down by hand).
+  function scrollChat(instant){
+    var beh=instant?'auto':'smooth';
+    var last=chatLog.lastElementChild;
+    if(last){
+      if(document.body.classList.contains('workspace')){
+        // Workspace: the chat log is its own scroll box.
+        chatLog.scrollTo({top:chatLog.scrollHeight,behavior:beh});
+      } else {
+        // Home view: the page scrolls. Put the last message just above the
+        // sticky composer (~110px clearance) so it is never hidden behind it.
+        var r=last.getBoundingClientRect();
+        var target=window.scrollY+r.bottom-window.innerHeight+110;
+        if(target>window.scrollY) window.scrollTo({top:target,behavior:beh});
+      }
+    }
+    var alast=appLog.lastElementChild;
+    if(alast){
+      // Phone app view: .app-main is the scroll box.
+      var main=appLog.closest('.app-main');
+      if(main) main.scrollTo({top:main.scrollHeight,behavior:beh});
+    }
   }
+  var suppressScroll=false;
   function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   // Old messages saved before rich cards sometimes contain raw pasted
   // links / markdown. Show them cleaned up (cards carry the real links).
@@ -886,7 +909,8 @@ body.in-app .app{display:flex;position:fixed;inset:0;z-index:5;flex-direction:co
     if(display) renderDisplay(display,a);
     appLog.appendChild(a);
     d._app=a;
-    scrollChat(); return d;
+    if(!suppressScroll) scrollChat();
+    return d;
   }
 
   // Working indicator: rotating status phrases while the agent works.
@@ -1545,7 +1569,10 @@ body.in-app .app{display:flex;position:fixed;inset:0;z-index:5;flex-direction:co
     fetch('/api/chat').then(function(r){ if(!r.ok) return null; return r.json(); }).then(function(data){
       if(!data||!data.messages||!data.messages.length) return;
       chatLog.innerHTML=''; appLog.innerHTML='';
+      suppressScroll=true;
       data.messages.forEach(function(m){ addMsg(m.content, m.role==='user'?'user':'agent', m.display||null); });
+      suppressScroll=false;
+      scrollChat(true);
     }).catch(function(){});
   }
 
