@@ -297,7 +297,7 @@ body.chatting .chat-log{display:flex}
 .news-empty{padding:40px 16px;text-align:center;color:var(--mute);font-size:14px;line-height:1.6}
 
 /* Reminder toast */
-.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,160%);z-index:60;background:var(--ink);color:var(--bg);border-radius:14px;padding:13px 18px;font-size:14px;box-shadow:var(--shadow);transition:transform .4s cubic-bezier(.2,.9,.3,1.2);max-width:min(480px,92vw);cursor:pointer}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,calc(100% + 48px));z-index:60;background:var(--ink);color:var(--bg);border-radius:14px;padding:13px 18px;font-size:14px;box-shadow:var(--shadow);transition:transform .4s cubic-bezier(.2,.9,.3,1.2);max-width:min(480px,92vw);cursor:pointer}
 .toast.show{transform:translate(-50%,0)}
 .toast b{display:block}
 .toast span{opacity:.75;font-size:13px}
@@ -893,6 +893,8 @@ body.in-app .app{display:flex;position:fixed;inset:0;z-index:5;flex-direction:co
     return String(text)
       .replace(/\[([^\]]+)\]\([^)]+\)/g,'$1')
       .replace(/https?:\/\/\S+/g,'')
+      .replace(/^#{1,6}\s*/gm,'')
+      .replace(/\*\*([^*]+)\*\*/g,'$1')
       .replace(/[ \t]{2,}/g,' ')
       .replace(/\n{3,}/g,'\n\n')
       .trim();
