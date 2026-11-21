@@ -49,7 +49,7 @@ function needsLiveInfo(text) {
   return /\b(news|headlines?|breaking|weather|forecast|rain|temperature|prices?|stocks?|crypto|bitcoin|scores?|who won|elections?|latest|current|today's|happening|trending)\b/.test(t);
 }
 
-function systemPrompt({ today, timezone, connected }) {
+function systemPrompt({ today, nowTime, tzOffset, timezone, connected }) {
   const LABELS = { calendar: 'Calendar', gmail: 'Gmail', drive: 'Drive', sheets: 'Sheets', docs: 'Docs' };
   const ALL = ['calendar', 'gmail', 'drive', 'sheets', 'docs'];
   const connectedIds = (connected || []).filter((s) => LABELS[s]);
@@ -62,7 +62,7 @@ function systemPrompt({ today, timezone, connected }) {
     : 'none — everything is connected';
   return [
     'You are Wasipy, a friendly AI agent that gets things done in the user\'s own Google account.',
-    `Today is ${today}. The user's timezone is ${timezone}. When creating events, use ISO 8601 times with the user's timezone offset.`,
+    `Today is ${today}. The current time is ${nowTime}${tzOffset ? ' (' + tzOffset + ')' : ''}. The user's timezone is ${timezone}. When creating events or reminders, use ISO 8601 times with the user's timezone offset. For relative times ("in 1 minute", "in 2 hours"), always count from the current time above — never guess what time it is.`,
     `Connected services for this user right now: ${connectedText}.`,
     `Not connected: ${notConnectedText}.`,
     'Rules:',
@@ -135,9 +135,9 @@ function pendingReply(pending) {
 
 // ---------------- Gemini ----------------
 
-async function runGemini({ userId, userMessage, history, timezone, today, connectedServices, preSearch }) {
+async function runGemini({ userId, userMessage, history, timezone, today, nowTime, tzOffset, connectedServices, preSearch }) {
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  let sysPrompt = systemPrompt({ today, timezone, connected: connectedServices });
+  let sysPrompt = systemPrompt({ today, nowTime, tzOffset, timezone, connected: connectedServices });
   if (preSearch && preSearch.display) {
     sysPrompt += `\n\nLive web search results for the user's question (answer ONLY from these for current facts — never add facts from your own knowledge):\n${preSearch.text}`;
   }
@@ -197,9 +197,9 @@ async function runGemini({ userId, userMessage, history, timezone, today, connec
 
 // ---------------- OpenAI ----------------
 
-async function runOpenAI({ userId, userMessage, history, timezone, today, connectedServices, preSearch }) {
+async function runOpenAI({ userId, userMessage, history, timezone, today, nowTime, tzOffset, connectedServices, preSearch }) {
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  let sysPrompt = systemPrompt({ today, timezone, connected: connectedServices });
+  let sysPrompt = systemPrompt({ today, nowTime, tzOffset, timezone, connected: connectedServices });
   if (preSearch && preSearch.display) {
     sysPrompt += `\n\nLive web search results for the user's question (answer ONLY from these for current facts — never add facts from your own knowledge):\n${preSearch.text}`;
   }
@@ -263,13 +263,30 @@ async function runAgent({ userId, userMessage, history, timezone, connectedServi
         'The AI key is not set up yet. The site owner needs to add a GEMINI_API_KEY (free) or OPENAI_API_KEY in the Vercel dashboard, then redeploy. I can chat, but I cannot do Google tasks until then.',
     };
   }
-  const today = new Date().toLocaleDateString('en-US', {
+  const tz = timezone || 'UTC';
+  const now = new Date();
+  const today = now.toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric',
-    timeZone: timezone || 'UTC',
+    timeZone: tz,
   });
+  // The agent must know the CURRENT TIME, not just the date — otherwise
+  // relative times ("in 1 minute", "in 2 hours") are pure guesses. (A test
+  // on 2026-11-22 scheduled "in 1 minute" 3 hours late for this reason.)
+  const nowTime = now.toLocaleString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: tz,
+  });
+  let tzOffset = '';
+  try {
+    tzOffset = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'longOffset' })
+      .formatToParts(now)
+      .find((p) => p.type === 'timeZoneName').value; // e.g. "GMT+06:00"
+  } catch (e) { tzOffset = ''; }
   // Deterministic pre-search: for questions that clearly need live info,
   // search first and hand the results to the model (see needsLiveInfo).
   // Only accepted when real results came back (a display payload exists);
@@ -283,7 +300,7 @@ async function runAgent({ userId, userMessage, history, timezone, connectedServi
       console.error('pre-search failed', e);
     }
   }
-  const common = { userId, userMessage, history, timezone: timezone || 'UTC', today, connectedServices: connectedServices || [], preSearch };
+  const common = { userId, userMessage, history, timezone: tz, today, nowTime, tzOffset, connectedServices: connectedServices || [], preSearch };
   try {
     const out = provider === 'gemini' ? await runGemini(common) : await runOpenAI(common);
     return out;
