@@ -302,6 +302,24 @@ body.chatting .chat-log{display:flex}
 .toast b{display:block}
 .toast span{opacity:.75;font-size:13px}
 
+/* Notifications bell (top bar) */
+.rt{position:relative}
+.bell-btn{position:relative;width:38px;height:38px;padding:0;display:inline-grid;place-items:center;border-radius:50%}
+.bell-badge{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:var(--red);color:#fff;font:700 11px/18px Inter;text-align:center}
+.bell-btn.ring svg{animation:bellRing .6s ease}
+@keyframes bellRing{0%,100%{transform:rotate(0)}20%{transform:rotate(18deg)}40%{transform:rotate(-14deg)}60%{transform:rotate(8deg)}80%{transform:rotate(-4deg)}}
+.notif-panel{position:absolute;top:calc(100% + 10px);right:0;z-index:30;width:min(360px,calc(100vw - 32px));max-height:min(480px,70vh);display:none;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);overflow:hidden}
+.notif-panel.open{display:flex}
+.notif-head{padding:13px 16px;border-bottom:1px solid var(--line)}
+.notif-head b{font:700 15px Manrope}
+.notif-list{overflow-y:auto;padding:8px}
+.notif-item{padding:11px 12px;border-radius:12px;animation:msgIn .3s var(--ease) both}
+.notif-item.unread{background:#f2f6ff}
+.notif-item b{display:block;font-size:14px;line-height:1.4}
+.notif-item span{display:block;font-size:12.5px;color:var(--mute);margin-top:3px;line-height:1.45}
+.notif-item time{display:block;font-size:11.5px;color:var(--mute);margin-top:5px}
+.notif-empty{padding:32px 16px;text-align:center;color:var(--mute);font-size:14px;line-height:1.6}
+
 /* Connect celebration — only shown right after a service connects */
 .celebrate{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:rgba(0,0,0,.45);backdrop-filter:blur(3px);animation:celIn .25s ease;cursor:pointer}
 .celebrate.out{opacity:0;transition:opacity .35s}
@@ -509,6 +527,11 @@ body.in-app .app{display:flex;position:fixed;inset:0;z-index:5;flex-direction:co
     <div class="rt">
       <a class="dl-link" href="#download">Download</a>
       <button class="btn-quiet news-btn" id="newsBtn" type="button" aria-label="Latest news"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M7 9h10M7 13h10M7 17h6"></path></svg><span>News</span></button>
+      <button class="btn-quiet bell-btn" id="bellBtn" type="button" aria-label="Notifications"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg><span class="bell-badge" id="bellBadge" style="display:none">0</span></button>
+      <div class="notif-panel" id="notifPanel" aria-label="Notifications">
+        <div class="notif-head"><b>Notifications</b></div>
+        <div class="notif-list" id="notifList"></div>
+      </div>
       <span class="pill" id="statusPill"><i></i>Not connected</span>
       <button class="btn" id="connectBtn" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="4" aria-hidden="true"><circle cx="12" cy="12" r="8" stroke="#4285f4" stroke-dasharray="12.5 37.8" stroke-dashoffset="0"></circle><circle cx="12" cy="12" r="8" stroke="#34a853" stroke-dasharray="12.5 37.8" stroke-dashoffset="-12.6"></circle><circle cx="12" cy="12" r="8" stroke="#fbbc05" stroke-dasharray="12.5 37.8" stroke-dashoffset="-25.1"></circle><circle cx="12" cy="12" r="8" stroke="#ea4335" stroke-dasharray="12.5 37.8" stroke-dashoffset="-37.7"></circle></svg>Continue with Google</button>
       <button class="btn-quiet" id="disconnectBtn" type="button" style="display:none">Sign out</button>
@@ -749,6 +772,8 @@ body.in-app .app{display:flex;position:fixed;inset:0;z-index:5;flex-direction:co
 <div class="toast" id="toast"></div>
 
 <script src="/sound.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script>
 (function(){
   var chatLog=document.getElementById('chatLog'), typing=document.getElementById('typing'), log=document.getElementById('actionLog');
@@ -1410,6 +1435,49 @@ body.in-app .app{display:flex;position:fixed;inset:0;z-index:5;flex-direction:co
   }
   toastEl.addEventListener('click',function(){ toastEl.classList.remove('show'); });
 
+  // ---------- notifications bell (top bar) ----------
+  // Due reminders + schedule alerts land here (the bottom toast is now
+  // only for short feedback like errors). Session-only list: only real
+  // alerts the user actually received, newest first, max 30.
+  var bellBtn=document.getElementById('bellBtn'), bellBadge=document.getElementById('bellBadge');
+  var notifPanel=document.getElementById('notifPanel'), notifList=document.getElementById('notifList');
+  var notifs=[];
+  function renderNotifs(){
+    var unread=0;
+    notifs.forEach(function(n){ if(!n.read) unread++; });
+    bellBadge.textContent=unread>9?'9+':unread;
+    bellBadge.style.display=unread?'':'none';
+    notifList.innerHTML='';
+    if(!notifs.length){
+      var e=document.createElement('div'); e.className='notif-empty';
+      e.innerHTML='No notifications yet.<br>Reminders and schedule alerts will show up here.';
+      notifList.appendChild(e);
+      return;
+    }
+    notifs.forEach(function(n){
+      var d=document.createElement('div'); d.className='notif-item'+(n.read?'':' unread');
+      d.appendChild(el('b',null,n.title));
+      if(n.sub) d.appendChild(el('span',null,n.sub));
+      d.appendChild(el('time',null,timeAgo(n.at)));
+      notifList.appendChild(d);
+    });
+  }
+  function pushNotif(title,sub){
+    notifs.unshift({title:title,sub:sub||'',at:new Date().toISOString(),read:false});
+    if(notifs.length>30) notifs.length=30;
+    renderNotifs();
+    bellBtn.classList.remove('ring'); void bellBtn.offsetWidth; bellBtn.classList.add('ring');
+  }
+  bellBtn.addEventListener('click',function(e){
+    e.stopPropagation();
+    var open=notifPanel.classList.toggle('open');
+    if(open){ notifs.forEach(function(n){ n.read=true; }); renderNotifs(); }
+  });
+  document.addEventListener('click',function(e){
+    if(notifPanel.classList.contains('open')&&!notifPanel.contains(e.target)) notifPanel.classList.remove('open');
+  });
+  renderNotifs();
+
   // Notification sound: the user's own sound file (sound.js, loaded above).
   // Browsers only allow sound after the user has clicked or tapped once, so
   // the first click silently unlocks playback (volume 0, no audible sound).
@@ -1479,7 +1547,7 @@ body.in-app .app{display:flex;position:fixed;inset:0;z-index:5;flex-direction:co
       if(data.upcoming)renderReminders(data.upcoming);
       (data.due||[]).forEach(function(r){
         playNotifSound();
-        showToast('Reminder: '+r.title, r.note||('Due '+fmtTime(r.when)));
+        pushNotif('Reminder: '+r.title, r.note||('Due '+fmtTime(r.when)));
         if('Notification' in window&&Notification.permission==='granted'){
           try{ new Notification('Reminder: '+r.title,{body:r.note||'Wasipy reminder'}); }catch(e){}
         }
@@ -1515,7 +1583,7 @@ body.in-app .app{display:flex;position:fixed;inset:0;z-index:5;flex-direction:co
         var mins=Math.max(0,Math.round((new Date(n.start).getTime()-Date.now())/60000));
         var msg=mins<=1?('Starting now: '+n.title):('Starting in '+mins+' minutes: '+n.title);
         playNotifSound();
-        showToast(msg,'Calendar · '+fmtTime(n.start));
+        pushNotif(msg,'Calendar · '+fmtTime(n.start));
         if('Notification' in window&&Notification.permission==='granted'){
           try{ new Notification(msg,{body:'Wasipy · Calendar'}); }catch(e){}
         }
@@ -1745,6 +1813,27 @@ body.in-app .app{display:flex;position:fixed;inset:0;z-index:5;flex-direction:co
   if(params.get('signin')==='required'){ addMsg('Please sign in with Google first.','agent'); }
   if(params.toString()){ window.history.replaceState({},'',window.location.pathname); }
 
+  // ---------- scroll animations (GSAP + ScrollTrigger, home view only) ----------
+  // Professional scroll motion for the signed-out home page: sections rise
+  // and fade in as they enter the viewport. Fully guarded — if the CDN
+  // fails, reduced motion is preferred, or the view is the workspace /
+  // phone app, the site behaves exactly as before.
+  function setupScrollAnims(){
+    if(isCapacitor||signedIn) return;
+    if(!window.gsap||!window.ScrollTrigger) return;
+    if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    gsap.registerPlugin(ScrollTrigger);
+    function rise(el,delay){
+      if(!el) return;
+      gsap.from(el,{y:36,opacity:0,duration:0.9,ease:'power3.out',clearProps:'transform,opacity',delay:delay||0,scrollTrigger:{trigger:el,start:'top 88%',once:true}});
+    }
+    gsap.utils.toArray('.steps .st').forEach(function(el,i){ rise(el,i*0.09); });
+    rise(document.getElementById('appsGrid'));
+    gsap.utils.toArray('.foot .fc').forEach(function(el,i){ rise(el,i*0.12); });
+    rise(document.getElementById('download'));
+    setTimeout(function(){ ScrollTrigger.refresh(); },600);
+  }
+
   loadMe().then(function(){
     if(signedIn){
       enterWorkspace();
@@ -1752,6 +1841,7 @@ body.in-app .app{display:flex;position:fixed;inset:0;z-index:5;flex-direction:co
       setInterval(function(){ loadReminders(); loadUpcoming(); },60000);
       try{ if(localStorage.getItem('wasipy_email_rem')==='1') setEmailSwitch(true); }catch(e){}
     }
+    setupScrollAnims();
     if(justConnected){
       celebrateConnect(justConnected);
       // Inside the app, land on the Apps tab so the new toggle is visible.
