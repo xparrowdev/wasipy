@@ -1555,17 +1555,31 @@ body.in-app .app{display:flex;position:fixed;inset:0;z-index:5;flex-direction:co
       appRemList.appendChild(ali);
     });
   }
+  // Reminders already notified on THIS device (in-memory + localStorage).
+  // The server returns due reminders to every client, so each client
+  // dedupes locally — otherwise only the first poller ever notifies.
+  var notifiedRems={};
+  try{ notifiedRems=JSON.parse(localStorage.getItem('wasipy_notified_rem')||'{}')||{}; }catch(e){ notifiedRems={}; }
   function loadReminders(){
     if(!signedIn)return;
     fetch('/api/reminders').then(function(r){return r.json();}).then(function(data){
       if(data.upcoming)renderReminders(data.upcoming);
+      var changed=false;
       (data.due||[]).forEach(function(r){
+        if(notifiedRems[r.id])return;
+        notifiedRems[r.id]=Date.now(); changed=true;
         playNotifSound();
         pushNotif('Reminder: '+r.title, r.note||('Due '+fmtTime(r.when)));
         if('Notification' in window&&Notification.permission==='granted'){
           try{ new Notification('Reminder: '+r.title,{body:r.note||'Wasipy reminder'}); }catch(e){}
         }
       });
+      if(changed){
+        var cut=Date.now()-24*3600*1000, pruned={};
+        Object.keys(notifiedRems).forEach(function(k){ if(notifiedRems[k]>cut)pruned[k]=notifiedRems[k]; });
+        notifiedRems=pruned;
+        try{ localStorage.setItem('wasipy_notified_rem',JSON.stringify(notifiedRems)); }catch(e){}
+      }
     }).catch(function(){});
   }
   // ---------- upcoming schedule: "Up next" panel + proactive alerts ----------

@@ -1,6 +1,11 @@
 // /api/reminders — the signed-in user's reminders.
-// GET    — { upcoming: [...], due: [...] }. Reminders in `due` are marked
-//          notified on return, so each one alerts once in the app.
+// GET    — { upcoming: [...], due: [...] }. `due` holds reminders that
+//          became due in the last 12 hours. It is NOT claimed here:
+//          every open client (website, desktop app, phone) notifies
+//          once locally, because a server-side claim meant only the
+//          first poller — often a background tab or the hidden desktop
+//          app — ever showed the notification, and other clients saw
+//          nothing. (Found by a live test on 2026-11-22.)
 // DELETE — cancel one reminder (?id=<reminder id>).
 const { ObjectId } = require('mongodb');
 const { getSession } = require('../session');
@@ -36,16 +41,10 @@ module.exports = async (req, res) => {
       .limit(10)
       .toArray();
     const due = await col
-      .find({ userId, status: 'pending', when: { $lte: now }, notifiedAt: null })
+      .find({ userId, status: 'pending', when: { $lte: now, $gte: new Date(now.getTime() - 12 * 3600 * 1000) } })
       .sort({ when: 1 })
       .limit(10)
       .toArray();
-    if (due.length) {
-      await col.updateMany(
-        { _id: { $in: due.map((d) => d._id) } },
-        { $set: { notifiedAt: now } }
-      );
-    }
     return json(res, 200, { upcoming: upcoming.map(shape), due: due.map(shape) });
   }
 
