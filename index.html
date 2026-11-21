@@ -302,6 +302,18 @@ body.chatting .chat-log{display:flex}
 .toast b{display:block}
 .toast span{opacity:.75;font-size:13px}
 
+/* Loading veil: covers the page until the sign-in check finishes, so a
+   signed-in user never sees the signed-out home flash first. Entrance
+   animations stay paused until then, so they play fully once revealed. */
+.veil{position:fixed;inset:0;z-index:200;background:var(--bg);display:grid;place-items:center;transition:opacity .45s ease}
+.veil.hide{opacity:0;pointer-events:none}
+.veil-in{display:flex;flex-direction:column;align-items:center;gap:14px}
+.veil-mark{width:52px;height:52px;border-radius:14px;background:#0b1b3a;display:grid;place-items:center}
+.veil-name{font:800 22px Manrope;color:#0b1b3a}
+.veil-spin{width:22px;height:22px;border-radius:50%;border:2.5px solid var(--line);border-top-color:#4285f4;animation:veilSpin .9s linear infinite}
+@keyframes veilSpin{to{transform:rotate(360deg)}}
+body:not(.ready) .w *,body:not(.ready) .app *{animation-play-state:paused!important}
+
 /* Notifications bell (top bar) */
 .rt{position:relative}
 .bell-btn{position:relative;width:38px;height:38px;padding:0;display:inline-grid;place-items:center;border-radius:50%}
@@ -518,8 +530,10 @@ body.in-app .app{display:flex;position:fixed;inset:0;z-index:5;flex-direction:co
   .app-tab.on{font-weight:600;color:#1F4FD8}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}h1 b,.ap,.card,.sub,.steps{opacity:1;filter:none;transform:none}}
 </style>
+<noscript><style>.veil{display:none!important}body:not(.ready) .w *,body:not(.ready) .app *{animation-play-state:running!important}</style></noscript>
 </head>
 <body>
+  <div class="veil" id="veil" aria-hidden="true"><div class="veil-in"><div class="veil-mark"><svg width="28" height="28" viewBox="14 20 74 56" aria-hidden="true"><path d="M22 30 L36 66 L50 43 L64 66 L78 35" fill="none" stroke="#fff" stroke-width="11.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="80" cy="30" r="7.5" fill="#ffb020"/></svg></div><div class="veil-name">Wasipy</div><div class="veil-spin"></div></div></div>
 <div class="w"><div class="in">
 
   <header class="top">
@@ -1834,6 +1848,13 @@ body.in-app .app{display:flex;position:fixed;inset:0;z-index:5;flex-direction:co
     setTimeout(function(){ ScrollTrigger.refresh(); },600);
   }
 
+  // Safety: never trap the user on the loading veil if the sign-in
+  // check hangs — reveal the page after 8s no matter what.
+  setTimeout(function(){
+    document.body.classList.add('ready');
+    var v=document.getElementById('veil'); if(v) v.remove();
+  },8000);
+
   loadMe().then(function(){
     if(signedIn){
       enterWorkspace();
@@ -1842,6 +1863,10 @@ body.in-app .app{display:flex;position:fixed;inset:0;z-index:5;flex-direction:co
       try{ if(localStorage.getItem('wasipy_email_rem')==='1') setEmailSwitch(true); }catch(e){}
     }
     setupScrollAnims();
+    // Sign-in state is known now: reveal the correct view.
+    document.body.classList.add('ready');
+    var veil=document.getElementById('veil');
+    if(veil){ veil.classList.add('hide'); setTimeout(function(){ veil.remove(); },500); }
     if(justConnected){
       celebrateConnect(justConnected);
       // Inside the app, land on the Apps tab so the new toggle is visible.
