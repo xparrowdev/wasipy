@@ -13,6 +13,7 @@
 //     address (127.0.0.1:8765) for Google's redirect back, then finishes the
 //     sign-in with the server and saves the session in the app.
 const { app, BrowserWindow, Tray, Menu, Notification, shell, net, dialog, session } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const path = require('node:path');
 const fs = require('node:fs');
 const http = require('node:http');
@@ -311,6 +312,7 @@ function createTray() {
     { label: 'Open Wasipy', click: showWindow },
     { label: 'Check reminders now', click: () => pollReminders() },
     { label: 'Check schedule now', click: () => pollCalendar() },
+    { label: 'Check for updates', click: () => checkForUpdates() },
     { type: 'separator' },
     {
       label: 'Quit Wasipy',
@@ -390,6 +392,18 @@ async function pollCalendar() {
   }
 }
 
+// Self-update: from 1.0.4 the app checks GitHub Releases for a newer
+// version, downloads it in the background, and installs it when the app
+// quits (or on restart). checkForUpdatesAndNotify shows a Windows
+// notification once the update is downloaded and ready. Quietly does
+// nothing when offline or when no newer version exists. (The 'error'
+// listener matters: without it an update error would throw and crash
+// the app, since autoUpdater is an EventEmitter.)
+autoUpdater.on('error', () => {});
+function checkForUpdates() {
+  autoUpdater.checkForUpdatesAndNotify().catch(() => {});
+}
+
 app.whenReady().then(() => {
   // Start Wasipy automatically when Windows starts (user can turn this off
   // in Windows Settings > Apps > Startup).
@@ -403,6 +417,9 @@ app.whenReady().then(() => {
   // First schedule check after 45 seconds, then every minute.
   setTimeout(pollCalendar, 45 * 1000);
   setInterval(pollCalendar, POLL_MS);
+  // First update check after 1 minute, then every 6 hours.
+  setTimeout(checkForUpdates, 60 * 1000);
+  setInterval(checkForUpdates, 6 * 3600 * 1000);
 });
 
 // Keep running in the tray when all windows are closed (Windows behaviour
