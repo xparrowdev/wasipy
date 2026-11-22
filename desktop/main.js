@@ -14,6 +14,7 @@
 //     sign-in with the server and saves the session in the app.
 const { app, BrowserWindow, Tray, Menu, Notification, shell, net, dialog, session } = require('electron');
 const path = require('node:path');
+const fs = require('node:fs');
 const http = require('node:http');
 
 const SITE_URL = 'https://wasipy.vercel.app/';
@@ -323,21 +324,44 @@ function createTray() {
   tray.on('click', showWindow);
 }
 
+// Reminders already shown by THIS app. The server returns due reminders to
+// every client on every poll, so each client must remember what it already
+// showed — without this, the same reminder notified every 60 seconds.
+// (Found 2026-11-22: two leftover test reminders spammed all morning.)
+// Kept in memory + a file in userData, so an app restart does not re-notify.
+let notifiedRems = {};
+function notifiedFile() { return path.join(app.getPath('userData'), 'notified-reminders.json'); }
+function loadNotifiedRems() {
+  try { notifiedRems = JSON.parse(fs.readFileSync(notifiedFile(), 'utf8')) || {}; } catch { notifiedRems = {}; }
+}
+function saveNotifiedRems() {
+  const cut = Date.now() - 24 * 3600 * 1000;
+  const pruned = {};
+  for (const k of Object.keys(notifiedRems)) if (notifiedRems[k] > cut) pruned[k] = notifiedRems[k];
+  notifiedRems = pruned;
+  try { fs.writeFileSync(notifiedFile(), JSON.stringify(notifiedRems)); } catch {}
+}
+
 // Check for due reminders using the signed-in session's cookies, and fire a
-// native Windows notification for each one. Quietly does nothing when the
-// user is not signed in yet or the computer is offline.
+// native Windows notification for each one — once per reminder (see
+// notifiedRems above). Quietly does nothing when the user is not signed in
+// yet or the computer is offline.
 async function pollReminders() {
   try {
     const res = await net.fetch(REMINDERS_URL, { method: 'GET' });
     if (!res.ok) return;
     const data = await res.json();
+    let changed = false;
     for (const r of data.due || []) {
+      if (notifiedRems[r.id]) continue;
+      notifiedRems[r.id] = Date.now(); changed = true;
       new Notification({
         title: `Reminder: ${r.title}`,
         body: r.note || 'Wasipy reminder',
         icon: path.join(__dirname, 'build', 'icon.png'),
       }).show();
     }
+    if (changed) saveNotifiedRems();
   } catch {
     // Offline — the next poll will retry.
   }
@@ -370,6 +394,7 @@ app.whenReady().then(() => {
   // Start Wasipy automatically when Windows starts (user can turn this off
   // in Windows Settings > Apps > Startup).
   app.setLoginItemSettings({ openAtLogin: true });
+  loadNotifiedRems();
   createWindow();
   createTray();
   // First reminder check after 30 seconds, then every minute.
