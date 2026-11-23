@@ -1,9 +1,10 @@
-// The AI agent's tools: what it can DO in the user's Google account.
-// Read tools run immediately. Write tools NEVER run from chat directly —
-// they create a pending action the user must confirm first (Yes/No).
-// Local tools (reminders) run immediately too — they only touch Wasipy's
-// own database, never the user's Google account.
+// The AI agent's tools: what it can DO in the user's Google account and
+// Facebook Page. Read tools run immediately. Write tools NEVER run from
+// chat directly — they create a pending action the user must confirm first
+// (Yes/No). Local tools (reminders) run immediately too — they only touch
+// Wasipy's own database, never the user's Google account.
 const { serviceClient, apiFor } = require('./google');
+const { resolvePage, graph } = require('./meta');
 const { getDb } = require('./mongo');
 
 const READ_TOOLS = [
@@ -79,6 +80,53 @@ const READ_TOOLS = [
       required: ['query'],
     },
   },
+  {
+    name: 'list_facebook_posts',
+    description: 'List recent posts on the user\'s connected Facebook Page, with likes and comment counts.',
+    parameters: {
+      type: 'object',
+      properties: {
+        count: { type: 'number', description: 'How many posts (default 5, max 10)' },
+        page: { type: 'string', description: 'Optional Page name or id when several Pages are connected' },
+      },
+    },
+  },
+  {
+    name: 'list_facebook_comments',
+    description: 'List comments on a Facebook Page post. Omit postId to see comments on the latest post.',
+    parameters: {
+      type: 'object',
+      properties: {
+        postId: { type: 'string', description: 'Post id from list_facebook_posts (optional — latest post if omitted)' },
+        count: { type: 'number', description: 'How many comments (default 10, max 20)' },
+        page: { type: 'string', description: 'Optional Page name or id when several Pages are connected' },
+      },
+    },
+  },
+  {
+    name: 'list_facebook_messages',
+    description: 'List recent Messenger conversations on the user\'s connected Facebook Page, with the last message of each.',
+    parameters: {
+      type: 'object',
+      properties: {
+        count: { type: 'number', description: 'How many conversations (default 5, max 10)' },
+        page: { type: 'string', description: 'Optional Page name or id when several Pages are connected' },
+      },
+    },
+  },
+  {
+    name: 'read_facebook_messages',
+    description: 'Read the messages of one Messenger conversation on the connected Facebook Page.',
+    parameters: {
+      type: 'object',
+      properties: {
+        conversationId: { type: 'string', description: 'Conversation id from list_facebook_messages' },
+        count: { type: 'number', description: 'How many messages (default 10, max 20)' },
+        page: { type: 'string', description: 'Optional Page name or id when several Pages are connected' },
+      },
+      required: ['conversationId'],
+    },
+  },
 ];
 
 const WRITE_TOOLS = [
@@ -132,6 +180,44 @@ const WRITE_TOOLS = [
         content: { type: 'string', description: 'Text to put in the document' },
       },
       required: ['title', 'content'],
+    },
+  },
+  {
+    name: 'create_facebook_post',
+    description: 'Publish a post on the user\'s connected Facebook Page. Needs user confirmation before running.',
+    parameters: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', description: 'Text of the post' },
+        page: { type: 'string', description: 'Optional Page name or id when several Pages are connected' },
+      },
+      required: ['message'],
+    },
+  },
+  {
+    name: 'reply_facebook_comment',
+    description: 'Reply to a comment on the user\'s Facebook Page, as the Page. Needs user confirmation before running.',
+    parameters: {
+      type: 'object',
+      properties: {
+        commentId: { type: 'string', description: 'Comment id from list_facebook_comments' },
+        message: { type: 'string', description: 'Reply text' },
+        page: { type: 'string', description: 'Optional Page name or id when several Pages are connected' },
+      },
+      required: ['commentId', 'message'],
+    },
+  },
+  {
+    name: 'reply_facebook_message',
+    description: 'Reply to a Messenger conversation on the user\'s Facebook Page, as the Page. Needs user confirmation before running. Meta only allows replies within 24 hours of the person\'s last message.',
+    parameters: {
+      type: 'object',
+      properties: {
+        recipientId: { type: 'string', description: 'The other person\'s id (PSID) from list_facebook_messages' },
+        message: { type: 'string', description: 'Reply text' },
+        page: { type: 'string', description: 'Optional Page name or id when several Pages are connected' },
+      },
+      required: ['recipientId', 'message'],
     },
   },
 ];
@@ -426,6 +512,126 @@ async function webSearch(userId, args) {
   return { text, display: { kind: 'search', items } };
 }
 
+// ---------- Facebook Page executors (Graph API) ----------
+
+async function requirePage(userId, args) {
+  return resolvePage(userId, args.page);
+}
+
+async function listFacebookPosts(userId, args) {
+  const page = await requirePage(userId, args);
+  if (!page) return { text: notConnected('Facebook Page'), display: null };
+  const count = Math.min(Math.max(Number(args.count) || 5, 1), 10);
+  const data = await graph(
+    `/${page.pageId}/posts?fields=id,message,created_time,permalink_url,reactions.summary(total_count),comments.summary(total_count)&limit=${count}`,
+    page.token
+  );
+  const posts = data.data || [];
+  if (!posts.length) return { text: `No posts on "${page.pageName}" yet.`, display: null };
+  const displayItems = posts.map((p) => ({
+    id: p.id,
+    message: p.message || '',
+    created_time: p.created_time || '',
+    url: p.permalink_url || '',
+    reactions: (p.reactions && p.reactions.summary && p.reactions.summary.total_count) || 0,
+    comments: (p.comments && p.comments.summary && p.comments.summary.total_count) || 0,
+  }));
+  return {
+    // NOTE: no URLs in the text — links live only in the display payload.
+    text: displayItems
+      .map((p) => `- id=${p.id} | ${String(p.message).slice(0, 120)} | ${p.created_time} | ${p.reactions} reactions, ${p.comments} comments`)
+      .join('\n'),
+    display: { kind: 'fb_posts', pageName: page.pageName, items: displayItems },
+  };
+}
+
+async function listFacebookComments(userId, args) {
+  const page = await requirePage(userId, args);
+  if (!page) return { text: notConnected('Facebook Page'), display: null };
+  const count = Math.min(Math.max(Number(args.count) || 10, 1), 20);
+  let postId = args.postId;
+  if (!postId) {
+    const posts = await graph(`/${page.pageId}/posts?fields=id&limit=1`, page.token);
+    if (!posts.data || !posts.data.length) return { text: `No posts on "${page.pageName}" yet.`, display: null };
+    postId = posts.data[0].id;
+  }
+  const data = await graph(
+    `/${postId}/comments?fields=id,from{name},message,created_time&limit=${count}`,
+    page.token
+  );
+  const comments = data.data || [];
+  if (!comments.length) return { text: 'No comments on that post yet.', display: null };
+  const displayItems = comments.map((c) => ({
+    id: c.id,
+    from: (c.from && c.from.name) || '?',
+    message: c.message || '',
+    created_time: c.created_time || '',
+  }));
+  return {
+    text: displayItems
+      .map((c) => `- id=${c.id} | ${c.from}: ${String(c.message).slice(0, 200)} | ${c.created_time}`)
+      .join('\n'),
+    display: { kind: 'fb_comments', postId, items: displayItems },
+  };
+}
+
+async function listFacebookMessages(userId, args) {
+  const page = await requirePage(userId, args);
+  if (!page) return { text: notConnected('Facebook Page'), display: null };
+  const count = Math.min(Math.max(Number(args.count) || 5, 1), 10);
+  const data = await graph(
+    `/${page.pageId}/conversations?fields=id,participants,updated_time,messages.limit(1){id,message,from,created_time}&limit=${count}`,
+    page.token
+  );
+  const convs = data.data || [];
+  if (!convs.length) return { text: `No Messenger conversations on "${page.pageName}" yet.`, display: null };
+  const displayItems = convs.map((c) => {
+    const others = ((c.participants && c.participants.data) || []).filter(
+      (p) => String(p.id) !== String(page.pageId)
+    );
+    const last = (c.messages && c.messages.data && c.messages.data[0]) || null;
+    return {
+      id: c.id,
+      otherId: others.length ? others[0].id : '',
+      otherName: others.length ? others[0].name || '' : '',
+      updated_time: c.updated_time || '',
+      lastMessage: last ? last.message || '' : '',
+      lastFrom: last && last.from ? last.from.name || '' : '',
+    };
+  });
+  return {
+    text: displayItems
+      .map((c) => `- conversation=${c.id} | with ${c.otherName} (id=${c.otherId}) | last: "${String(c.lastMessage).slice(0, 120)}" | ${c.updated_time}`)
+      .join('\n'),
+    display: { kind: 'fb_messages', pageName: page.pageName, items: displayItems },
+  };
+}
+
+async function readFacebookMessages(userId, args) {
+  const page = await requirePage(userId, args);
+  if (!page) return { text: notConnected('Facebook Page'), display: null };
+  const count = Math.min(Math.max(Number(args.count) || 10, 1), 20);
+  const data = await graph(
+    `/${args.conversationId}/messages?fields=id,message,from,created_time&limit=${count}`,
+    page.token
+  );
+  const msgs = data.data || [];
+  if (!msgs.length) return { text: 'No messages in that conversation.', display: null };
+  const displayItems = msgs.map((m) => ({
+    id: m.id,
+    from: (m.from && m.from.name) || '?',
+    fromId: (m.from && m.from.id) || '',
+    message: m.message || '',
+    created_time: m.created_time || '',
+  }));
+  return {
+    text: displayItems
+      .map((m) => `- ${m.from}: ${String(m.message).slice(0, 300)} | ${m.created_time}`)
+      .join('\n'),
+    display: { kind: 'fb_thread', conversationId: args.conversationId, items: displayItems },
+  };
+}
+
 const READ_EXECUTORS = {
   list_calendar_events: listCalendarEvents,
   list_recent_emails: listRecentEmails,
@@ -435,6 +641,10 @@ const READ_EXECUTORS = {
   read_sheet: readSheet,
   read_doc: readDoc,
   web_search: webSearch,
+  list_facebook_posts: listFacebookPosts,
+  list_facebook_comments: listFacebookComments,
+  list_facebook_messages: listFacebookMessages,
+  read_facebook_messages: readFacebookMessages,
 };
 
 async function executeReadRich(userId, toolName, args) {
@@ -612,11 +822,38 @@ async function createDoc(userId, args) {
   };
 }
 
+async function createFacebookPost(userId, args) {
+  const page = await resolvePage(userId, args.page);
+  if (!page) return { ok: false, text: notConnected('Facebook Page') };
+  await graph(`/${page.pageId}/feed`, page.token, { method: 'POST', body: { message: args.message } });
+  return { ok: true, text: `Posted on "${page.pageName}".`, log: `Posted on Facebook Page "${page.pageName}"` };
+}
+
+async function replyFacebookComment(userId, args) {
+  const page = await resolvePage(userId, args.page);
+  if (!page) return { ok: false, text: notConnected('Facebook Page') };
+  await graph(`/${args.commentId}/replies`, page.token, { method: 'POST', body: { message: args.message } });
+  return { ok: true, text: 'Reply posted.', log: 'Replied to a Facebook comment' };
+}
+
+async function replyFacebookMessage(userId, args) {
+  const page = await resolvePage(userId, args.page);
+  if (!page) return { ok: false, text: notConnected('Facebook Page') };
+  await graph(`/${page.pageId}/messages`, page.token, {
+    method: 'POST',
+    body: { recipient: { id: args.recipientId }, message: { text: args.message } },
+  });
+  return { ok: true, text: 'Message sent.', log: 'Replied to a Facebook message' };
+}
+
 const WRITE_EXECUTORS = {
   create_calendar_event: createCalendarEvent,
   send_email: sendEmail,
   append_sheet_row: appendSheetRow,
   create_doc: createDoc,
+  create_facebook_post: createFacebookPost,
+  reply_facebook_comment: replyFacebookComment,
+  reply_facebook_message: replyFacebookMessage,
 };
 
 async function executeWrite(userId, toolName, args) {
@@ -641,6 +878,12 @@ function summarizeWrite(toolName, args) {
       return `Add a row to "${args.spreadsheetName}": ${(args.values || []).join(' | ')}`;
     case 'create_doc':
       return `Create a Google Doc titled "${args.title}"`;
+    case 'create_facebook_post':
+      return `Post on Facebook Page: "${String(args.message || '').slice(0, 120)}"`;
+    case 'reply_facebook_comment':
+      return `Reply to a Facebook comment: "${String(args.message || '').slice(0, 120)}"`;
+    case 'reply_facebook_message':
+      return `Reply to a Facebook message: "${String(args.message || '').slice(0, 120)}"`;
     default:
       return toolName;
   }

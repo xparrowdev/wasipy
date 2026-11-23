@@ -44,14 +44,14 @@ function stripLinks(text) {
 // files, sheets, docs).
 function needsLiveInfo(text) {
   const t = (text || '').toLowerCase();
-  if (/\b(emails?|mail|inbox|calendars?|meetings?|events?|schedules?|drive|files?|folders?|sheets?|spreadsheets?|docs?|documents?)\b/.test(t)) return false;
+  if (/\b(emails?|mail|inbox|calendars?|meetings?|events?|schedules?|drive|files?|folders?|sheets?|spreadsheets?|docs?|documents?|facebook|instagram|page|pages|comments?|messenger|insta)\b/.test(t)) return false;
   if (/\b(search (the )?web|google it|look (it )?up online|find online|browse (the )?web)\b/.test(t)) return true;
   return /\b(news|headlines?|breaking|weather|forecast|rain|temperature|prices?|stocks?|crypto|bitcoin|scores?|who won|elections?|latest|current|today's|happening|trending)\b/.test(t);
 }
 
 function systemPrompt({ today, nowTime, tzOffset, timezone, connected }) {
-  const LABELS = { calendar: 'Calendar', gmail: 'Gmail', drive: 'Drive', sheets: 'Sheets', docs: 'Docs' };
-  const ALL = ['calendar', 'gmail', 'drive', 'sheets', 'docs'];
+  const LABELS = { calendar: 'Calendar', gmail: 'Gmail', drive: 'Drive', sheets: 'Sheets', docs: 'Docs', facebook: 'Facebook Page' };
+  const ALL = ['calendar', 'gmail', 'drive', 'sheets', 'docs', 'facebook'];
   const connectedIds = (connected || []).filter((s) => LABELS[s]);
   const notConnectedIds = ALL.filter((s) => !connectedIds.includes(s));
   const connectedText = connectedIds.length
@@ -61,7 +61,7 @@ function systemPrompt({ today, nowTime, tzOffset, timezone, connected }) {
     ? notConnectedIds.map((s) => LABELS[s]).join(', ')
     : 'none — everything is connected';
   return [
-    'You are Wasipy, a friendly AI agent that gets things done in the user\'s own Google account.',
+    'You are Wasipy, a friendly AI agent that gets things done in the user\'s own accounts (Google and Facebook Page).',
     `Today is ${today}. The current time is ${nowTime}${tzOffset ? ' (' + tzOffset + ')' : ''}. The user's timezone is ${timezone}. When creating events or reminders, use ISO 8601 times with the user's timezone offset. For relative times ("in 1 minute", "in 2 hours"), always count from the current time above — never guess what time it is.`,
     `Connected services for this user right now: ${connectedText}.`,
     `Not connected: ${notConnectedText}.`,
@@ -81,6 +81,7 @@ function systemPrompt({ today, nowTime, tzOffset, timezone, connected }) {
     '12. For "recent files", "latest files", or "what is in my Drive", ALWAYS call list_recent_drive_files. You CAN list recent files — never say you cannot, and never ask the user for a keyword first. Never output a URL, a markdown link, or a numbered list of files in your reply text; the cards show the files.',
     '13. Never use markdown link syntax like [name](url) and never paste https:// links into your reply. If you catch yourself writing a link, delete it — the card already shows it.',
     '14. For ANY question about news, current events, prices, weather, or facts that change over time, you MUST call web_search FIRST and answer only from its results. Never answer such questions from your own knowledge — your knowledge is out of date and you will invent wrong facts. If live web search results are already given in these instructions, answer from them — do not search again. Keep your reply to one short line; the result cards show the sources.',
+    '15. Facebook Page: use list_facebook_posts, list_facebook_comments, list_facebook_messages and read_facebook_messages for questions about the user\'s Page. Posts, comment replies and message replies are write tools — call the matching tool once and wait for the user\'s Yes/No confirmation, exactly like other writes. Never invent Page posts, comments or messages. If a tool says the Facebook Page is NOT_CONNECTED, tell the user to connect their Facebook Page and stop.',
   ].join('\n');
 }
 

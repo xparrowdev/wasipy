@@ -21,6 +21,9 @@ const routes = {
   'mobile-exchange': require('./_lib/routes/mobile-exchange'),
   'calendar-upcoming': require('./_lib/routes/calendar-upcoming'),
   'news': require('./_lib/routes/news'),
+  'meta-auth': require('./_lib/routes/meta-auth'),
+  'meta-callback': require('./_lib/routes/meta-callback'),
+  'meta-connections': require('./_lib/routes/meta-connections'),
 };
 
 module.exports = async (req, res) => {
